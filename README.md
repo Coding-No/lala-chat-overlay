@@ -1,190 +1,46 @@
-# LALA Chat Overlay
+# LALA Live Chat Overlay
 
-Chat YouTube nempel di atas game — buat yang streaming cuma pakai **satu monitor**.
-Nggak ada bubble chat, cuma teks polos di atas layar, selalu di depan, nggak kena alt-tab.
+Plugin chat YouTube buat OBS. **Nol butuh API key** — plugin baca live chat-nya langsung dari halaman YouTube.
 
-Windows 10/11 + OBS. Author: **LALA**
+## Cara pasang (gampang)
 
-![LALA Chat Overlay](assets/png/lala_icon_app_128.png)
+1. **Tutup OBS dulu.**
+2. Klik kanan `LalaLiveChatOverlaySetup.exe` → **Run as Administrator**.
+3. Arahin installernya ke folder OBS kamu (yang isinya `obs64.exe`, misal `C:\Program Files\obs-studio`).
+4. Buka OBS → menu **Docks** → centang **LALA Live Chat Overlay**.
+5. Tempel URL video live YouTube di panelnya. Udah, jalan.
 
----
+Unduh installer: [Releases](https://github.com/Coding-No/lala-chat-overlay/releases/latest)
 
-## Ini apa sih
+## Kalau dock-nya nol muncul
 
-Kalau game-nya fullscreen dan chat-nya ketinggalan di monitor kedua yang nggak punya —
-ini solusinya. Chat muncul di jendela transparan yang nempel di atas game.
-Klik tembus, jadi nggak ganggu main.
+- Pastikan OBS beneran ketutup pas install. Installer matiin OBS sendiri, tapi kadang nyangkut — tutup manual dari Task Manager.
+- Jalanin sebagai **Administrator**. Kalau nol, DLL nol bisa kesalin ke `C:\Program Files\obs-studio`.
+- Cek ada nol `yt-chat-overlay.dll` di `...\obs-studio\obs-plugins\64bit\`.
+- Masih nol muncul → install **Visual C++ Redistributable x64** dari Microsoft, terus buka ulang OBS.
+- Pastikan OBS-nya **64-bit** (semua OBS modern udah 64-bit).
 
-- Baca chat YouTube langsung dari stream yang lagi live
-- Jendela transparan, klik tembus (WS_EX_TRANSPARENT), selalu di paling depan
-- Ada dock di OBS buat atur-atur
-- Jalan **tanpa API key** — nggak perlu daftar Google Cloud apa-apa
-- Kalau nggak pakai OBS pun bisa, ada `YouTubeChatOverlay.exe` standalone
+## Ada apa aja
 
----
+- Baca chat YouTube live tanpa API key
+- Panel **Dock** di dalam OBS — atur sendiri taruhnya di mana
+- Kustom font & warna per bagian (pesan, username, shadow)
+- Deteksi window capture biar overlay nol ketangkep di rekaman
 
-## Yang butuh disiapin
+## Uninstall
 
-- Windows 10/11 64-bit
-- OBS Studio 28 atau lebih baru (64-bit)
-- Stream YouTube yang lagi live + chat-nya nyala
-
-Nggak butuh: Python, Node, Visual Studio, vcpkg, API key YouTube.
-
----
-
-## Cara pasang (2 langkah)
-
-1. **Ekstrak ZIP** ke folder mana aja (jangan di dalam Program Files)
-2. **Klik kanan `PASANG.bat` → Run as administrator**
-   (kalau nggak mau admin: klik 2x aja, terus ketik `Y` + Enter)
-
-Installer naruh DLL-nya ke lokasi yang OBS beneran baca:
-
-```
-%APPDATA%\obs-studio\plugins\yt-chat-overlay\bin\64bit\yt-chat-overlay.dll
-%APPDATA%\obs-studio\plugins\yt-chat-overlay\data\
-```
-
-Buka OBS → plugin keload sendiri → cek di **Help → Log Files → View Current Log**,
-cari baris:
-
-```
-Loaded Modules:
-    yt-chat-overlay.dll
-```
-
-Kalau ada baris itu, plugin-nya kebaca.
-
----
-
-## Nyalain dock-nya
-
-1. Buka OBS
-2. Menu **Docks** (di menu bar)
-3. Centang **LALA Chat Overlay**
-
-Dock-nya muncul. Masukin URL stream / video ID, klik Connect.
-
----
-
-## Kalau dock-nya nggak muncul
-
-Cek urutan ini:
-
-**1. Cek OBS beneran load plugin-nya**
-Help → Log Files → View Current Log → Ctrl+F cari `yt-chat-overlay`.
-Ada `Loaded Modules: yt-chat-overlay.dll`? Kalau **nggak ada**, berarti DLL-nya
-di lokasi yang salah atau arsitekturnya beda (32 vs 64 bit).
-
-**2. Cek lokasi file**
-File harus ada di **tepat** sini:
-
-```
-%APPDATA%\obs-studio\plugins\yt-chat-overlay\bin\64bit\yt-chat-overlay.dll
-```
-
-Buka File Explorer, ketik `%APPDATA%\obs-studio\plugins` di address bar.
-Kalau folder `yt-chat-overlay` nggak ada di situ, installer gagal nyalin —
-pasang manual dengan copy-paste, bikin foldernya sendiri.
-
-**3. Pastikan versi OBS 64-bit**
-OBS 32-bit nggak bisa baca DLL 64-bit. Cek di Help → About.
-
-**4. Tutup OBS dulu sebelum pasang**
-Kalau OBS lagi jalan pas DLL-nya diganti, perubahan baru kebaca setelah
-OBS ditutup total (cek Task Manager, pastikan nggak ada `obs64.exe` nyangkut).
-
----
-
-## `YouTubeChatOverlay.exe` itu apa?
-
-Itu **mesin overlay-nya**, bukan aplikasi yang bisa diklik langsung.
-
-⚠️ **JANGAN klik 2x file ini.** Nggak akan muncul jendela apa-apa.
-Prosesnya jalan di Task Manager tapi layarnya kosong — **itu normal, bukan rusak.**
-
-Yang menggerakkannya adalah plugin DLL di dalam OBS. `YouTubeChatOverlay.exe`
-dipakai OBS di belakang layar, atau dijalankan dari command line kalau mau
-pakai tanpa OBS.
-
----
+Jalanin `uninstall_plugin.bat` — dia bersihin DLL dari semua jalur pasang.
 
 ## Build dari source
 
-Butuh: CMake 3.20+, Visual Studio 2022 (MSVC), OBS Studio 28+ SDK.
+Butuh Visual Studio 2022 + CMake. Build **WAJIB Release**:
 
-```bat
+```
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release --parallel
+cmake --build build --config Release
 ```
 
-Atau pakai GitHub Actions — workflow-nya sudah ada di `.github/workflows/build.yml`,
-tiap push ke `main` otomatis build DLL + EXE di `windows-2022`.
-
-**Catatan OBS:** OBS Windows itu MSVC-only. DLL yang di-build pakai mingw
-nggak akan keload walau header PE-nya kelihatan benar.
+Atau tinggal jalanin `rebuild_release.bat`. CI di GitHub juga otomatis build tiap push, plus ada gate yang nolak build kalau hasilnya masih nyantol CRT debug — biar DLL-nya pasti jalan di PC orang yang nol ada Visual Studio.
 
 ---
-
-## Struktur folder
-
-```
-CMakeLists.txt          build script
-main.cpp                entry point exe standalone
-app.rc                  resource (icon, versi)
-youtube/                ngambil chat dari YouTube
-overlay/                mesin render + window transparan
-obs-plugin/             jembatan ke OBS (dock, controller)
-ui/                     dialog setting
-installer/              installer (dibungkus jadi .exe)
-assets/                 logo, icon
-docs/                   catatan riset & arsitektur
-```
-
----
-
-## Lisensi
-
-MIT — lihat [LICENSE](LICENSE).
-
-Silakan pakai, modif, bikin versi sendiri. Kalau mau traktir kopi:
-[trakteer.id/nopauwxp](https://trakteer.id/nopauwxp/gift)
-
----
-
-## Kalau plugin-nya nol kebaca di OBS
-
-Cek dulu: `Menu OBS -> Help -> Log Files -> View Current Log`. Kalau baris
-`obs_init_module(yt-chat-overlay.dll)` ada tapi dock nggak muncul, itu beda
-masalah -- laporin. Kalau baris itu **nol ada sama sekali**, biasanya salah satu ini:
-
-**1. DLL-nya build Debug.** Ini kejadian di rilis 29 Sep 2026 -- DLL-nya minta
-`MSVCP140D.dll` (CRT debug), yang cuma ada di PC yang ada Visual Studio-nya.
-Di PC biasa = nol ke-load. **Ini udah diperbaiki**: build wajib Release, dan
-CI bakal GAGAL kalau sampai ada CRT debug nyempil.
-
-Kalau mau cek DLL sendiri, jalanin di PowerShell:
-
-```powershell
-Select-String -Path .\yt-chat-overlay.dll -Pattern "MSVCP140D.dll" -Encoding Byte -Quiet
-# True  = DEBUG, nol bakal jalan di PC biasa
-# False = OK
-```
-
-**2. DLL-nya salah tempat.** Untuk OBS 28 ke atas, DLL harus di:
-
-```
-%APPDATA%\obs-studio\plugins\yt-chat-overlay.dll
-```
-
-atau folder OBS-nya:
-
-```
-<OBS>\obs-plugins\64bit\yt-chat-overlay.dll
-```
-
-Perhatiin: DLL **langsung** di dalam `plugins\` atau `obs-plugins\64bit\`.
-Kalau ada `\bin\64bit\` di tengah jalurnya, OBS modern nol baca.
-
-**3. Build ulang sendiri (nol usah Visual Studio):** jalanin `rebuild_release.bat`.
+Kalau ada bug, buka **Issues**.
