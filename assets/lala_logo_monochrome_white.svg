@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <rect width="800" height="800" fill="#000000"/>
+  
+        <g transform="translate(400, 275) scale(1.05) translate(-200, -200)">
+          <!-- Outer OBS Orbit Ring 1 -->
+          <path d="M 90,140 C 70,180 70,230 95,275 C 105,295 125,320 150,335" 
+                fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="155" cy="338" r="6" fill="#FFFFFF"/>
+
+          <!-- Outer OBS Orbit Ring 2 -->
+          <path d="M 310,140 C 330,180 330,230 305,275 C 295,295 275,320 250,335" 
+                fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="245" cy="338" r="6" fill="#FFFFFF"/>
+
+          <!-- Top Orbit Arc -->
+          <path d="M 140,80 C 180,65 220,65 260,80" 
+                fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+
+          <!-- Chat Bubble Body -->
+          <path d="M 115,105 
+                   C 115,85 130,70 150,70 
+                   L 250,70 
+                   C 270,70 285,85 285,105 
+                   L 285,255 
+                   C 285,275 270,290 250,290 
+                   L 170,290 
+                   L 135,325 
+                   L 142,290 
+                   C 125,290 115,275 115,255 
+                   Z" 
+                fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round"/>
+
+          <!-- Cat-ear Headset -->
+          <!-- Headband -->
+          <path d="M 138,170 C 138,115 262,115 262,170" 
+                fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round"/>
+
+          <!-- Cat Ears (Left & Right) -->
+          <polygon points="148,135 122,80 180,108" fill="#FFFFFF"/>
+          <polygon points="252,135 278,80 220,108" fill="#FFFFFF"/>
+
+          <!-- Earcups -->
+          <rect x="122" y="165" width="22" height="48" rx="11" fill="#FFFFFF"/>
+          <rect x="256" y="165" width="22" height="48" rx="11" fill="#FFFFFF"/>
+
+          <!-- Lala Face & Hair -->
+          <!-- Hair Bangs -->
+          <path d="M 152,160 
+                   C 160,185 175,190 180,170 
+                   C 185,195 200,200 200,165 
+                   C 200,200 215,195 220,170 
+                   C 225,190 240,185 248,160 
+                   C 252,140 248,130 200,130 
+                   C 152,130 148,140 152,160 Z" 
+                fill="#FFFFFF"/>
+
+          <!-- Left Eye (Cute Wink / Anime Eye) -->
+          <circle cx="178" cy="216" r="10" fill="#FFFFFF"/>
+          <path d="M 166,206 C 172,198 186,198 190,206" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+
+          <!-- Right Eye (Playful Wink Arc) -->
+          <path d="M 210,218 C 218,206 230,208 234,220" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+
+          <!-- Cute Cat Smile -->
+          <path d="M 194,236 Q 200,242 206,236" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+
+          <!-- Headset Boom Mic -->
+          <path d="M 134,198 Q 145,232 175,236" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="177" cy="236" r="5" fill="#FFFFFF"/>
+
+          <!-- Gaming XP Pixel Accent -->
+          <rect x="270" y="55" width="10" height="10" fill="#FFFFFF"/>
+          <rect x="282" y="43" width="12" height="12" fill="#FFFFFF"/>
+          <rect x="296" y="55" width="10" height="10" fill="#FFFFFF"/>
+          <rect x="282" y="69" width="12" height="12" fill="#FFFFFF"/>
+          <rect x="260" y="43" width="6" height="6" fill="#FFFFFF"/>
+        </g>
+        
+  
+            <g transform="translate(400, 540)" text-anchor="middle">
+              <!-- Primary Brand Name -->
+              <text x="0" y="0" font-family="'Segoe UI', 'Montserrat', 'Inter', -apple-system, sans-serif" font-weight="900" font-size="52" fill="#FFFFFF" letter-spacing="1">
+                Lala <tspan fill="#FFFFFF" font-weight="400" font-size="42">×</tspan> Nopauw <tspan fill="#FFFFFF">XP</tspan>
+              </text>
+              
+              <!-- Divider -->
+              <line x1="-180" y1="25" x2="180" y2="25" stroke="#FFFFFF" stroke-width="2.5" opacity="0.4"/>
+
+              <!-- Subtitle -->
+              <text x="0" y="58" font-family="'Segoe UI', 'Montserrat', 'Arial', sans-serif" font-weight="700" font-size="20" fill="#FFFFFF" letter-spacing="8">
+                CHAT STREAM OBS
+              </text>
+            </g>
+            
+</svg>

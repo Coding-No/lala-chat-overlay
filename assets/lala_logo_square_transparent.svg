@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  
+  <defs>
+    <!-- Brand Gradients -->
+    <linearGradient id="grad-pink-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2A85"/>
+      <stop offset="50%" stop-color="#9D4EDD"/>
+      <stop offset="100%" stop-color="#00F0FF"/>
+    </linearGradient>
+
+    <linearGradient id="grad-cyan-pink" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="60%" stop-color="#7928CA"/>
+      <stop offset="100%" stop-color="#FF2A85"/>
+    </linearGradient>
+
+    <linearGradient id="grad-lala" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FF5EA8"/>
+      <stop offset="100%" stop-color="#FF0077"/>
+    </linearGradient>
+
+    <linearGradient id="grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#70FFFF"/>
+      <stop offset="100%" stop-color="#00B4D8"/>
+    </linearGradient>
+
+    <linearGradient id="grad-xp" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="100%" stop-color="#FF2A85"/>
+    </linearGradient>
+
+    <linearGradient id="grad-bg-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1322"/>
+      <stop offset="50%" stop-color="#080C16"/>
+      <stop offset="100%" stop-color="#04060B"/>
+    </linearGradient>
+
+    <linearGradient id="grad-bubble" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A2238" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0D1220" stop-opacity="0.98"/>
+    </linearGradient>
+
+    <linearGradient id="grad-headphone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#242C44"/>
+      <stop offset="100%" stop-color="#121624"/>
+    </linearGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glow-pink" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="subtle-shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  
+  <!-- Centered Mascot Emblem -->
+  
+    <g transform="translate(400, 275) scale(1.05) translate(-200, -200)">
+      <!-- Filtered ambient back-glow -->
+      <circle cx="200" cy="200" r="130" fill="url(#grad-pink-cyan)" opacity="0.18" filter="url(#glow-cyan)"/>
+
+      <!-- OBS-Inspired Aerodynamic Orbital Arcs (Stream broadcast energy) -->
+      <!-- Left Cyan Arc -->
+      <path d="M 85,130 C 60,180 62,240 92,290 C 106,314 128,336 155,350" 
+            fill="none" stroke="url(#grad-cyan)" stroke-width="12" stroke-linecap="round" opacity="0.9" filter="url(#glow-cyan)"/>
+      <circle cx="158" cy="351" r="5.5" fill="#70FFFF"/>
+
+      <!-- Right Magenta Arc -->
+      <path d="M 315,130 C 340,180 338,240 308,290 C 294,314 272,336 245,350" 
+            fill="none" stroke="url(#grad-lala)" stroke-width="12" stroke-linecap="round" opacity="0.9" filter="url(#glow-pink)"/>
+      <circle cx="242" cy="351" r="5.5" fill="#FF5EA8"/>
+
+      <!-- Top Violet Bridge Arc -->
+      <path d="M 135,72 C 175,54 225,54 265,72" 
+            fill="none" stroke="url(#grad-pink-cyan)" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+
+      <!-- Chat Bubble Container (YouTube Live Chat Overlay Concept) -->
+      <!-- Drop shadow & outer stroke -->
+      <path d="M 108,102 
+               C 108,78 128,58 152,58 
+               L 248,58 
+               C 272,58 292,78 292,102 
+               L 292,258 
+               C 292,282 272,302 248,302 
+               L 168,302 
+               L 128,340 
+               L 136,302 
+               C 120,302 108,282 108,258 
+               Z" 
+            fill="url(#grad-bubble)" 
+            stroke="url(#grad-cyan-pink)" 
+            stroke-width="7" 
+            stroke-linejoin="round"
+            filter="url(#subtle-shadow)"/>
+
+      <!-- Chat Header Accent Bar & Live Indicator -->
+      <path d="M 125,75 L 275,75" stroke="#253250" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="136" cy="75" r="4.5" fill="#FF2A85" filter="url(#glow-pink)"/>
+      <circle cx="150" cy="75" r="3.5" fill="#00F0FF" filter="url(#glow-cyan)"/>
+      
+      <!-- Subtle internal live chat scanline grid -->
+      <line x1="126" y1="285" x2="160" y2="285" stroke="#00F0FF" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+      <line x1="170" y1="285" x2="274" y2="285" stroke="#FF2A85" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+
+      <!-- ============================================== -->
+      <!-- MASCOT "LALA" - Cute Stylized Girl Gamer Icon -->
+      <!-- ============================================== -->
+
+      <!-- Headset Headband -->
+      <path d="M 136,170 C 136,104 264,104 264,170" 
+            fill="none" stroke="url(#grad-headphone)" stroke-width="16" stroke-linecap="round"/>
+      <path d="M 148,154 C 158,118 242,118 252,154" 
+            fill="none" stroke="url(#grad-pink-cyan)" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+
+      <!-- Cat-Ear Antennas (Cyber Gaming Aesthetic) -->
+      <!-- Left Ear -->
+      <polygon points="146,134 118,74 182,104" fill="#182035" stroke="url(#grad-cyan)" stroke-width="4.5" stroke-linejoin="round"/>
+      <polygon points="144,124 128,86 168,105" fill="url(#grad-lala)" opacity="0.9"/>
+
+      <!-- Right Ear -->
+      <polygon points="254,134 282,74 218,104" fill="#182035" stroke="url(#grad-lala)" stroke-width="4.5" stroke-linejoin="round"/>
+      <polygon points="256,124 272,86 232,105" fill="url(#grad-cyan)" opacity="0.9"/>
+
+      <!-- Earcups (Headset Speakers) -->
+      <!-- Left Earcup -->
+      <g filter="url(#subtle-shadow)">
+        <rect x="120" y="162" width="22" height="52" rx="11" fill="#141A2B" stroke="#00F0FF" stroke-width="3.5"/>
+        <line x1="131" y1="172" x2="131" y2="204" stroke="#FF2A85" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="131" cy="188" r="4" fill="#70FFFF"/>
+      </g>
+
+      <!-- Right Earcup -->
+      <g filter="url(#subtle-shadow)">
+        <rect x="258" y="162" width="22" height="52" rx="11" fill="#141A2B" stroke="#FF2A85" stroke-width="3.5"/>
+        <line x1="269" y1="172" x2="269" y2="204" stroke="#00F0FF" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="269" cy="188" r="4" fill="#FFA3D7"/>
+      </g>
+
+      <!-- Soft Face Base (Chibi Anime Silhouette) -->
+      <path d="M 148,168 
+               C 148,225 170,258 200,258 
+               C 230,258 252,225 252,168 
+               Z" 
+            fill="#FFF5FA"/>
+
+      <!-- Hair Bangs (Geometric Clean Anime Bangs) -->
+      <path d="M 145,162 
+               C 152,192 168,198 175,174 
+               C 180,204 196,210 200,168 
+               C 204,210 220,204 225,174 
+               C 232,198 248,192 255,162 
+               C 260,135 246,122 200,122 
+               C 154,122 140,135 145,162 Z" 
+            fill="url(#grad-lala)"/>
+
+      <!-- Hair Highlighting (Anime Shine) -->
+      <path d="M 160,144 Q 200,136 240,144" fill="none" stroke="#FFA3D7" stroke-width="4.5" stroke-linecap="round" opacity="0.8"/>
+
+      <!-- Cute Blushing Cheeks -->
+      <ellipse cx="166" cy="226" rx="9" ry="5.5" fill="#FF2A85" opacity="0.45"/>
+      <ellipse cx="234" cy="226" rx="9" ry="5.5" fill="#FF2A85" opacity="0.45"/>
+
+      <!-- Left Eye: Big Sparkling Anime Eye -->
+      <!-- Eyelash -->
+      <path d="M 168,204 C 174,196 186,196 192,204" fill="none" stroke="#121624" stroke-width="4" stroke-linecap="round"/>
+      <path d="M 191,202 L 195,199" stroke="#121624" stroke-width="3" stroke-linecap="round"/>
+      <!-- Iris & Pupil -->
+      <ellipse cx="180" cy="214" rx="7.5" ry="9" fill="#0E1322"/>
+      <ellipse cx="180" cy="215" rx="6" ry="7.5" fill="url(#grad-cyan)"/>
+      <circle cx="180" cy="215" r="3.5" fill="#060911"/>
+      <!-- Eye Sparkle / Catchlight -->
+      <circle cx="178" cy="211" r="2.8" fill="#FFFFFF"/>
+      <circle cx="182" cy="218" r="1.5" fill="#FFFFFF"/>
+      <polygon points="181,213 182,211 183,213 185,214 183,215 182,217 181,215 179,214" fill="#FFFFFF" opacity="0.9"/>
+
+      <!-- Right Eye: Playful Winking Arc (^_~) -->
+      <path d="M 212,214 C 218,205 228,206 234,217" fill="none" stroke="#121624" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M 233,212 L 237,208" stroke="#121624" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- Sweet Cute Smile -->
+      <path d="M 195,232 Q 200,238 205,232" fill="none" stroke="#FF0077" stroke-width="3.5" stroke-linecap="round"/>
+
+      <!-- Cyber Gaming Microphone -->
+      <path d="M 132,196 Q 146,236 174,239" fill="none" stroke="#242C44" stroke-width="5" stroke-linecap="round"/>
+      <path d="M 132,196 Q 146,236 174,239" fill="none" stroke="url(#grad-cyan)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="176" cy="239" r="5" fill="#FF2A85" filter="url(#glow-pink)"/>
+      <circle cx="176" cy="239" r="2" fill="#FFFFFF"/>
+
+      <!-- ============================================== -->
+      <!-- GAMING / CREATOR "XP" ACCENTS                  -->
+      <!-- ============================================== -->
+      <!-- Pixel XP Diamond Spark (Top Right) -->
+      <g filter="url(#glow-cyan)">
+        <!-- Center Star Diamond -->
+        <polygon points="288,40 293,52 305,57 293,62 288,74 283,62 271,57 283,52" fill="#00F0FF"/>
+        <polygon points="288,46 291,54 299,57 291,60 288,68 285,60 277,57 285,54" fill="#FFFFFF"/>
+        <!-- Satellite Pixels -->
+        <rect x="270" y="38" width="6" height="6" fill="#FF2A85"/>
+        <rect x="306" y="70" width="7" height="7" fill="#00F0FF"/>
+        <rect x="312" y="36" width="5" height="5" fill="#FFA3D7"/>
+      </g>
+    </g>
+    
+  <!-- Centered Typography -->
+  
+        <g transform="translate(400, 535)" text-anchor="middle">
+          <!-- Primary Brand Title -->
+          <g filter="url(#subtle-shadow)">
+            <!-- "Lala" in Gradient Pink -->
+            <text x="-165" y="0" font-family="'Segoe UI', 'Montserrat', 'Inter', sans-serif" font-weight="900" font-size="52" fill="url(#grad-lala)" letter-spacing="1" text-anchor="start">
+              Lala
+            </text>
+
+            <!-- "x" Multiplier -->
+            <text x="-40" y="-3" font-family="'Segoe UI', 'Montserrat', sans-serif" font-weight="400" font-size="40" fill="#70FFFF" opacity="0.9" text-anchor="middle">
+              ×
+            </text>
+
+            <!-- "Nopauw" in Clean Ice White / Cyan -->
+            <text x="5" y="0" font-family="'Segoe UI', 'Montserrat', 'Inter', sans-serif" font-weight="900" font-size="52" fill="#FFFFFF" letter-spacing="1" text-anchor="start">
+              Nopauw
+            </text>
+
+            <!-- "XP" Gaming Badge Accent -->
+            <g transform="translate(230, -38)">
+              <rect x="0" y="0" width="62" height="42" rx="8" fill="url(#grad-xp)" filter="url(#glow-pink)"/>
+              <text x="31" y="29" font-family="'Segoe UI', 'Montserrat', sans-serif" font-weight="900" font-size="24" fill="#0A0E18" text-anchor="middle" letter-spacing="2">
+                XP
+              </text>
+              <!-- Pixel glitch notch -->
+              <rect x="52" y="3" width="7" height="7" fill="#0A0E18"/>
+            </g>
+          </g>
+
+          <!-- Sleek Tech Divider Line -->
+          <g transform="translate(0, 30)">
+            <line x1="-220" y1="0" x2="-80" y2="0" stroke="url(#grad-pink-cyan)" stroke-width="2" opacity="0.6"/>
+            <polygon points="-8, -4 0, 4 8, -4 0, -12" fill="#00F0FF" filter="url(#glow-cyan)"/>
+            <circle cx="0" cy="-4" r="2.5" fill="#FFFFFF"/>
+            <line x1="80" y1="0" x2="220" y2="0" stroke="url(#grad-cyan-pink)" stroke-width="2" opacity="0.6"/>
+          </g>
+
+          <!-- Subtitle: CHAT STREAM OBS -->
+          <g transform="translate(0, 68)">
+            <!-- Live Dot -->
+            <circle cx="-168" cy="-6" r="4.5" fill="#FF2A85" filter="url(#glow-pink)"/>
+            
+            <text x="0" y="0" font-family="'Segoe UI', 'Montserrat', 'Inter', sans-serif" font-weight="800" font-size="21" fill="#70FFFF" letter-spacing="7" text-anchor="middle">
+              CHAT STREAM OBS
+            </text>
+
+            <circle cx="172" cy="-6" r="4.5" fill="#00F0FF" filter="url(#glow-cyan)"/>
+          </g>
+
+          <!-- YouTube Live Overlay Tagline -->
+          <text x="0" y="102" font-family="'Segoe UI', 'Inter', sans-serif" font-weight="500" font-size="13.5" fill="#8898BA" letter-spacing="3" text-anchor="middle">
+            GAMING OVERLAY &amp; STREAM ENGINE
+          </text>
+        </g>
+        
+</svg>

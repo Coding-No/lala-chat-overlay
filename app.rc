@@ -1,0 +1,9 @@
+#include <windows.h>
+
+#define IDI_APP_ICON 101
+#define IDR_LOGO_PNG 102
+#define IDR_ICON_PNG 103
+
+IDI_APP_ICON ICON "assets/lala_icon.ico"
+IDR_LOGO_PNG RCDATA "assets/png/lala_logo_horizontal_transparent_1200x400.png"
+IDR_ICON_PNG RCDATA "assets/png/lala_icon_app_64.png"

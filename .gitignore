@@ -1,0 +1,27 @@
+# build output
+build/
+out/
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.exe
+*.zip
+
+# python venv / cache
+__pycache__/
+*.pyc
+.venv/
+
+# editor
+.vs/
+.vscode/
+.idea/
+*.user
+
+# log lokal
+*.log
+obs_latest.log
