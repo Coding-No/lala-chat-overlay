@@ -18,8 +18,14 @@ jobs:
       - name: Konfigurasi (Release WAJIB)
         run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: cmake --build build --config Release --parallel
+      # PENTING (dari log CI asli, error RC2135): `--parallel` nge-build SEMUA
+      # target sekaligus - termasuk installer - padahal installer.rc butuh
+      # ../yt-chat-overlay.dll + ../YouTubeChatOverlay.exe yang belum ada di root.
+      # Urutan wajib: build lib + exe DULU, copy ke root, BARU installer.
+      - name: Build plugin DLL + exe overlay
+        run: |
+          cmake --build build --config Release --target yt-chat-overlay --parallel
+          cmake --build build --config Release --target YouTubeChatOverlay --parallel
 
       # installer.rc baca ../yt-chat-overlay.dll + ../YouTubeChatOverlay.exe
       - name: Siapkan file buat installer
@@ -33,9 +39,6 @@ jobs:
           Copy-Item $exe.FullName "$env:GITHUB_WORKSPACE\YouTubeChatOverlay.exe" -Force
           Get-ChildItem "$env:GITHUB_WORKSPACE\yt-chat-overlay.dll","$env:GITHUB_WORKSPACE\YouTubeChatOverlay.exe" |
             Select-Object Name, Length
-
-      - name: Build installer (menyerap DLL + exe jadi resource)
-        run: cmake --build build --config Release --target LalaLiveChatOverlaySetup
 
       - name: GATE - pastikan nol ada CRT debug di DLL
         shell: pwsh
@@ -56,6 +59,9 @@ jobs:
             Write-Host "Catatan: CRT statis kepakai (nol butuh VC++ Redist) - aman."
           }
           Write-Host "LULUS: nol ada CRT debug, DLL siap dipakai user."
+
+      - name: Build installer (menyerap DLL + exe jadi resource)
+        run: cmake --build build --config Release --target LalaLiveChatOverlaySetup --parallel
 
       - name: Kumpulin hasil
         uses: actions/upload-artifact@v4
