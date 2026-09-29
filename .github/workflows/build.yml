@@ -1,35 +1,52 @@
-name: build-windows
+name: build
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+  pull_request:
   workflow_dispatch:
 
 jobs:
-  build:
+  windows:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Konfigurasi (Release WAJIB)
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build build --config Release --parallel
 
-      - name: Cari hasil build
+      - name: GATE - pastikan nol ada CRT debug di DLL
         shell: pwsh
         run: |
-          Write-Host "=== file yang jadi ==="
-          Get-ChildItem -Recurse build -Include *.dll,*.exe |
-            Where-Object { $_.FullName -notmatch '\\CMakeFiles\\' } |
-            Select-Object FullName, Length | Format-Table -AutoSize
+          $dll = Get-ChildItem -Recurse -Path build -Filter yt-chat-overlay.dll | Select-Object -First 1
+          if (-not $dll) { Write-Error "yt-chat-overlay.dll nol ketemu"; exit 1 }
+          Write-Host "DLL: $($dll.FullName)"
+          $bytes = [System.IO.File]::ReadAllBytes($dll.FullName)
+          $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+          $bad = @('MSVCP140D.dll','VCRUNTIME140D.dll','VCRUNTIME140_1D.dll')
+          $hit = @()
+          foreach ($b in $bad) { if ($text.Contains($b)) { $hit += $b } }
+          if ($hit.Count -gt 0) {
+            Write-Error "DLL ini DEBUG BUILD - minta CRT debug: $($hit -join ', '). Set Release."
+            exit 1
+          }
+          if (-not $text.Contains('MSVCP140.dll')) {
+            Write-Host "Catatan: CRT statis kepakai (nol butuh VC++ Redist) - aman."
+          }
+          Write-Host "LULUS: nol ada CRT debug, DLL siap dipakai user."
 
-      - name: Upload artifact
+      - name: Kumpulin hasil
         uses: actions/upload-artifact@v4
         with:
-          name: lala-chat-overlay-windows
+          name: lala-chat-overlay-release
           path: |
-            build/**/Release/*.dll
-            build/**/Release/*.exe
+            build/**/yt-chat-overlay.dll
+            build/**/LalaLiveChatOverlay.exe
+            build/**/LalaLiveChatOverlaySetup.exe
           if-no-files-found: warn

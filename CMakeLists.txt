@@ -4,6 +4,26 @@ project(youtube-chat-overlay VERSION 1.0.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ==== WAJIB: jangan pernah ship Debug ====
+# Kalau nol dipatok, Visual Studio defaultnya Debug -> link ke MSVCP140D.dll
+# (CRT debug) yang cuma ada di PC yang punya Visual Studio. User awam = DLL mati.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+endif()
+set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "" FORCE)
+
+if(MSVC)
+    # CRT statis: user nol perlu install Visual C++ Redistributable
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # matiin hardening debug yang cuma bikin DLL minta DLL debug
+    add_compile_options(/utf-8 /O2 /GS /guard:cf)
+    add_link_options(/GUARD:CF /DYNAMICBASE /NXCOMPAT)
+    # sanity: kalau ada yang maksa Debug, rilis dibatalin
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(FATAL_ERROR "Jangan build Debug - rilis wajib Release")
+    endif()
+endif()
+
 if(MSVC)
     add_compile_options(/utf-8)
 endif()

@@ -150,3 +150,41 @@ MIT — lihat [LICENSE](LICENSE).
 
 Silakan pakai, modif, bikin versi sendiri. Kalau mau traktir kopi:
 [trakteer.id/nopauwxp](https://trakteer.id/nopauwxp/gift)
+
+---
+
+## Kalau plugin-nya nol kebaca di OBS
+
+Cek dulu: `Menu OBS -> Help -> Log Files -> View Current Log`. Kalau baris
+`obs_init_module(yt-chat-overlay.dll)` ada tapi dock nggak muncul, itu beda
+masalah -- laporin. Kalau baris itu **nol ada sama sekali**, biasanya salah satu ini:
+
+**1. DLL-nya build Debug.** Ini kejadian di rilis 29 Sep 2026 -- DLL-nya minta
+`MSVCP140D.dll` (CRT debug), yang cuma ada di PC yang ada Visual Studio-nya.
+Di PC biasa = nol ke-load. **Ini udah diperbaiki**: build wajib Release, dan
+CI bakal GAGAL kalau sampai ada CRT debug nyempil.
+
+Kalau mau cek DLL sendiri, jalanin di PowerShell:
+
+```powershell
+Select-String -Path .\yt-chat-overlay.dll -Pattern "MSVCP140D.dll" -Encoding Byte -Quiet
+# True  = DEBUG, nol bakal jalan di PC biasa
+# False = OK
+```
+
+**2. DLL-nya salah tempat.** Untuk OBS 28 ke atas, DLL harus di:
+
+```
+%APPDATA%\obs-studio\plugins\yt-chat-overlay.dll
+```
+
+atau folder OBS-nya:
+
+```
+<OBS>\obs-plugins\64bit\yt-chat-overlay.dll
+```
+
+Perhatiin: DLL **langsung** di dalam `plugins\` atau `obs-plugins\64bit\`.
+Kalau ada `\bin\64bit\` di tengah jalurnya, OBS modern nol baca.
+
+**3. Build ulang sendiri (nol usah Visual Studio):** jalanin `rebuild_release.bat`.
