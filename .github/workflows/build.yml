@@ -21,6 +21,22 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel
 
+      # installer.rc baca ../yt-chat-overlay.dll + ../YouTubeChatOverlay.exe
+      - name: Siapkan file buat installer
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem -Recurse -Path build -Filter yt-chat-overlay.dll | Select-Object -First 1
+          $exe = Get-ChildItem -Recurse -Path build -Filter YouTubeChatOverlay.exe | Select-Object -First 1
+          if (-not $dll) { Write-Error "yt-chat-overlay.dll nol ketemu"; exit 1 }
+          if (-not $exe) { Write-Error "YouTubeChatOverlay.exe nol ketemu"; exit 1 }
+          Copy-Item $dll.FullName "$env:GITHUB_WORKSPACE\yt-chat-overlay.dll" -Force
+          Copy-Item $exe.FullName "$env:GITHUB_WORKSPACE\YouTubeChatOverlay.exe" -Force
+          Get-ChildItem "$env:GITHUB_WORKSPACE\yt-chat-overlay.dll","$env:GITHUB_WORKSPACE\YouTubeChatOverlay.exe" |
+            Select-Object Name, Length
+
+      - name: Build installer (menyerap DLL + exe jadi resource)
+        run: cmake --build build --config Release --target LalaLiveChatOverlaySetup
+
       - name: GATE - pastikan nol ada CRT debug di DLL
         shell: pwsh
         run: |
@@ -47,6 +63,6 @@ jobs:
           name: lala-chat-overlay-release
           path: |
             build/**/yt-chat-overlay.dll
-            build/**/LalaLiveChatOverlay.exe
+            build/**/YouTubeChatOverlay.exe
             build/**/LalaLiveChatOverlaySetup.exe
           if-no-files-found: warn
