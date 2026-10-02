@@ -13,6 +13,13 @@
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "advapi32.lib")
 
+// Registry key for Add/Remove Programs
+static const wchar_t* UNINSTALL_REG_KEY = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\LalaLiveChatOverlay";
+static const wchar_t* APP_REG_KEY = L"SOFTWARE\\LalaLiveChatOverlay";
+
+// Forward declaration for uninstall
+static void RemoveDirectoryRecursive(const std::wstring& path);
+
 using namespace Gdiplus;
 
 #define IDI_APP_ICON       101
@@ -109,8 +116,21 @@ public:
         return (ok && written == size);
     }
 
+    // Helper: Try reading a registry string value
+    static std::wstring ReadRegistryString(HKEY root, const wchar_t* subKey, const wchar_t* valueName = nullptr) {
+        HKEY hKey;
+        if (RegOpenKeyExW(root, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) return L"";
+        wchar_t buf[MAX_PATH] = {0};
+        DWORD bufSize = sizeof(buf);
+        DWORD type = 0;
+        bool ok = (RegQueryValueExW(hKey, valueName, nullptr, &type, (LPBYTE)buf, &bufSize) == ERROR_SUCCESS);
+        RegCloseKey(hKey);
+        if (ok && (type == REG_SZ || type == REG_EXPAND_SZ)) return std::wstring(buf);
+        return L"";
+    }
+
     std::wstring DetectObsPath() {
-        // 1. Program Files
+        // 1. Program Files (most common)
         std::wstring p1 = L"C:\\Program Files\\obs-studio";
         if (IsObsDirValid(p1)) return p1;
 
@@ -118,23 +138,43 @@ public:
         std::wstring p2 = L"C:\\Program Files (x86)\\obs-studio";
         if (IsObsDirValid(p2)) return p2;
 
-        // 3. Steam OBS
+        // 3. Steam OBS (default library)
         std::wstring pSteam = L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\OBS Studio";
         if (IsObsDirValid(pSteam)) return pSteam;
 
-        // 4. Registry HKLM
-        HKEY hKey;
-        if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\OBS Studio", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-            wchar_t regPath[MAX_PATH] = {0};
-            DWORD bufSize = sizeof(regPath);
-            if (RegQueryValueExW(hKey, nullptr, nullptr, nullptr, (LPBYTE)regPath, &bufSize) == ERROR_SUCCESS) {
-                RegCloseKey(hKey);
-                if (IsObsDirValid(regPath)) return std::wstring(regPath);
-            }
-            RegCloseKey(hKey);
+        // 4. Steam OBS on other common drives (D:, E:, F:)
+        const wchar_t* drives[] = { L"D", L"E", L"F", L"G" };
+        for (auto drv : drives) {
+            std::wstring steamPath = std::wstring(drv) + L":\\SteamLibrary\\steamapps\\common\\OBS Studio";
+            if (IsObsDirValid(steamPath)) return steamPath;
         }
 
-        // 5. Default fallback
+        // 5. Registry HKLM (official OBS installer)
+        std::wstring regHKLM = ReadRegistryString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\OBS Studio");
+        if (!regHKLM.empty() && IsObsDirValid(regHKLM)) return regHKLM;
+
+        // 6. Registry HKCU (per-user OBS install)
+        std::wstring regHKCU = ReadRegistryString(HKEY_CURRENT_USER, L"SOFTWARE\\OBS Studio");
+        if (!regHKCU.empty() && IsObsDirValid(regHKCU)) return regHKCU;
+
+        // 7. Scoop install
+        wchar_t userProfile[MAX_PATH] = {0};
+        if (GetEnvironmentVariableW(L"USERPROFILE", userProfile, MAX_PATH) > 0) {
+            std::wstring scoopPath = std::wstring(userProfile) + L"\\scoop\\apps\\obs-studio\\current";
+            if (IsObsDirValid(scoopPath)) return scoopPath;
+        }
+
+        // 8. Chocolatey install
+        std::wstring chocoPath = L"C:\\ProgramData\\chocolatey\\lib\\obs-studio\\tools\\obs-studio";
+        if (IsObsDirValid(chocoPath)) return chocoPath;
+
+        // 9. Portable OBS on other drives
+        for (auto drv : drives) {
+            std::wstring portPath = std::wstring(drv) + L":\\obs-studio";
+            if (IsObsDirValid(portPath)) return portPath;
+        }
+
+        // 10. Default fallback
         return L"C:\\Program Files\\obs-studio";
     }
 
@@ -143,11 +183,21 @@ public:
         DWORD attr = GetFileAttributesW(path.c_str());
         if (attr == INVALID_FILE_ATTRIBUTES || !(attr & FILE_ATTRIBUTE_DIRECTORY)) return false;
 
+        // OBS 27 and older: bin/64bit/obs64.exe
         std::wstring exe1 = path + L"\\bin\\64bit\\obs64.exe";
         if (GetFileAttributesW(exe1.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
 
+        // OBS 30+: bin/obs64.exe (new flat layout)
+        std::wstring exe2 = path + L"\\bin\\obs64.exe";
+        if (GetFileAttributesW(exe2.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
+
+        // obs-plugins directory exists
         std::wstring plugins = path + L"\\obs-plugins";
         if (GetFileAttributesW(plugins.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
+
+        // data/obs-plugins directory (OBS 30+ new layout)
+        std::wstring dataPlugins = path + L"\\data\\obs-plugins";
+        if (GetFileAttributesW(dataPlugins.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
 
         return true;
     }
@@ -571,12 +621,23 @@ private:
             AppendLog(L"[1/2] Memasang OBS Plugin (yt-chat-overlay.dll)...");
             int copies = 0;
 
-            // Target 1: Selected OBS directory
-            std::wstring obsPluginsDir = obsPath + L"\\obs-plugins\\64bit";
+            // Target 1: Selected OBS directory — old-style layout (obs-plugins/64bit/)
             if (IsObsDirValid(obsPath)) {
+                std::wstring obsPluginsDir = obsPath + L"\\obs-plugins\\64bit";
                 if (DeployFile(IDR_PLUGIN_DLL, L"yt-chat-overlay.dll", obsPluginsDir + L"\\yt-chat-overlay.dll")) {
                     copies++;
                     AppendLog(L"  -> Berhasil disalin ke OBS Plugins: " + obsPluginsDir);
+                }
+
+                // Target 1b: OBS 30+ new flat layout (obs-plugins/yt-chat-overlay.dll)
+                std::wstring obsFlatDir = obsPath + L"\\obs-plugins";
+                DWORD flatAttr = GetFileAttributesW((obsPath + L"\\bin\\obs64.exe").c_str());
+                if (flatAttr != INVALID_FILE_ATTRIBUTES) {
+                    // This looks like a new-layout OBS, also place in flat directory
+                    if (DeployFile(IDR_PLUGIN_DLL, L"yt-chat-overlay.dll", obsFlatDir + L"\\yt-chat-overlay.dll")) {
+                        copies++;
+                        AppendLog(L"  -> Berhasil disalin ke OBS 30+ flat layout: " + obsFlatDir);
+                    }
                 }
             }
 
@@ -587,7 +648,7 @@ private:
                 AppendLog(L"  -> Berhasil disalin ke ProgramData Plugins: " + progDataDir);
             }
 
-            // Target 3: User AppData Plugins
+            // Target 3: User AppData Plugins (works without admin, all OBS versions)
             wchar_t appData[MAX_PATH];
             if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appData))) {
                 std::wstring userPluginDir = std::wstring(appData) + L"\\obs-studio\\plugins\\yt-chat-overlay\\bin\\64bit";
@@ -600,6 +661,7 @@ private:
             pluginSuccess = (copies > 0);
             if (pluginSuccess) {
                 AppendLog(L"[OK] Plugin OBS berhasil dipasang ke " + std::to_wstring(copies) + L" lokasi.");
+                AppendLog(L"[INFO] Plugin mendukung OBS 25+ (Qt5), OBS 28+ (Qt6), dan OBS 30+ (layout baru).");
             } else {
                 AppendLog(L"[ERROR] Gagal memasang plugin. Coba jalankan installer dengan Run as Administrator.");
             }
@@ -653,9 +715,14 @@ private:
             }
         }
 
+        // 4. Copy Installer as Uninstaller & Register in Add/Remove Programs
+        bool overallSuccess = (installPlugin ? pluginSuccess : true) && (installSoftware ? softwareSuccess : true);
+        if (overallSuccess) {
+            RegisterUninstaller(appPath, obsPath, installPlugin);
+        }
+
         EnableWindow(m_btnInstall, TRUE);
 
-        bool overallSuccess = (installPlugin ? pluginSuccess : true) && (installSoftware ? softwareSuccess : true);
         if (overallSuccess) {
             AppendLog(L"=== INSTALASI SELESAI DENGAN SUKSES! ===");
             std::wstring successMsg = L"Selamat! Instalasi Lala Live Chat Overlay berhasil diselesaikan.\n\n";
@@ -668,13 +735,18 @@ private:
             if (installSoftware) {
                 successMsg += L"Aplikasi Mandiri siap digunakan melalui Pintasan Desktop / Start Menu.\n\n";
             }
+            successMsg += L"Untuk menghapus: buka Settings -> Apps -> Lala Live Chat Overlay -> Uninstall\n\n";
             successMsg += L"Apakah Anda ingin membuka OBS Studio sekarang?";
 
             int choice = MessageBoxW(m_hwnd, successMsg.c_str(), L"Instalasi Berhasil - Lala Live Chat Overlay", MB_YESNO | MB_ICONINFORMATION);
             if (choice == IDYES) {
-                std::wstring obsExe = obsPath + L"\\bin\\64bit\\obs64.exe";
-                if (SourceFileExists(obsExe)) {
-                    ShellExecuteW(nullptr, L"open", obsExe.c_str(), nullptr, (obsPath + L"\\bin\\64bit").c_str(), SW_SHOWNORMAL);
+                std::wstring obsExeOld = obsPath + L"\\bin\\64bit\\obs64.exe";
+                std::wstring obsExeNew = obsPath + L"\\bin\\obs64.exe";
+
+                if (SourceFileExists(obsExeNew)) {
+                    ShellExecuteW(nullptr, L"open", obsExeNew.c_str(), nullptr, (obsPath + L"\\bin").c_str(), SW_SHOWNORMAL);
+                } else if (SourceFileExists(obsExeOld)) {
+                    ShellExecuteW(nullptr, L"open", obsExeOld.c_str(), nullptr, (obsPath + L"\\bin\\64bit").c_str(), SW_SHOWNORMAL);
                 } else {
                     ShellExecuteW(nullptr, L"open", L"obs64.exe", nullptr, nullptr, SW_SHOWNORMAL);
                 }
@@ -682,6 +754,60 @@ private:
             DestroyWindow(m_hwnd);
         } else {
             MessageBoxW(m_hwnd, L"Instalasi mengalami kendala pada beberapa file.\nPastikan Anda memiliki hak akses administrator dan OBS Studio sedang ditutup.", L"Status Instalasi", MB_OK | MB_ICONWARNING);
+        }
+    }
+
+    // ================================================================
+    // Register in Windows Add/Remove Programs + copy uninstaller
+    // ================================================================
+    void RegisterUninstaller(const std::wstring& appPath, const std::wstring& obsPath, bool installedPlugin) {
+        AppendLog(L"[INFO] Mendaftarkan uninstaller di Windows...");
+
+        // Copy this installer EXE to app folder as uninstaller
+        wchar_t selfPath[MAX_PATH] = {0};
+        GetModuleFileNameW(nullptr, selfPath, MAX_PATH);
+        std::wstring uninstallerPath = appPath + L"\\Uninstall.exe";
+        SHCreateDirectoryExW(nullptr, appPath.c_str(), nullptr);
+        CopyFileW(selfPath, uninstallerPath.c_str(), FALSE);
+
+        // Save installation info to HKCU registry (no admin needed)
+        HKEY hKey;
+        if (RegCreateKeyExW(HKEY_CURRENT_USER, UNINSTALL_REG_KEY, 0, nullptr,
+                           REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &hKey, nullptr) == ERROR_SUCCESS) {
+
+            std::wstring displayName = L"Lala Live Chat Overlay";
+            std::wstring publisher = L"Coding-No";
+            std::wstring version = L"1.0.0";
+            std::wstring uninstallCmd = L"\"" + uninstallerPath + L"\" /uninstall";
+            std::wstring iconPath = appPath + L"\\lala_icon.ico";
+
+            RegSetValueExW(hKey, L"DisplayName", 0, REG_SZ, (BYTE*)displayName.c_str(), (DWORD)(displayName.size() + 1) * 2);
+            RegSetValueExW(hKey, L"Publisher", 0, REG_SZ, (BYTE*)publisher.c_str(), (DWORD)(publisher.size() + 1) * 2);
+            RegSetValueExW(hKey, L"DisplayVersion", 0, REG_SZ, (BYTE*)version.c_str(), (DWORD)(version.size() + 1) * 2);
+            RegSetValueExW(hKey, L"UninstallString", 0, REG_SZ, (BYTE*)uninstallCmd.c_str(), (DWORD)(uninstallCmd.size() + 1) * 2);
+            RegSetValueExW(hKey, L"DisplayIcon", 0, REG_SZ, (BYTE*)iconPath.c_str(), (DWORD)(iconPath.size() + 1) * 2);
+            RegSetValueExW(hKey, L"InstallLocation", 0, REG_SZ, (BYTE*)appPath.c_str(), (DWORD)(appPath.size() + 1) * 2);
+            DWORD noModify = 1;
+            RegSetValueExW(hKey, L"NoModify", 0, REG_DWORD, (BYTE*)&noModify, sizeof(DWORD));
+            RegSetValueExW(hKey, L"NoRepair", 0, REG_DWORD, (BYTE*)&noModify, sizeof(DWORD));
+
+            // Estimate installed size in KB
+            DWORD sizeKB = 4096; // ~4MB estimate
+            RegSetValueExW(hKey, L"EstimatedSize", 0, REG_DWORD, (BYTE*)&sizeKB, sizeof(DWORD));
+
+            RegCloseKey(hKey);
+            AppendLog(L"  -> Terdaftar di Windows 'Apps & Features' (Add/Remove Programs).");
+        }
+
+        // Save install paths so uninstaller knows where to clean
+        HKEY hAppKey;
+        if (RegCreateKeyExW(HKEY_CURRENT_USER, APP_REG_KEY, 0, nullptr,
+                           REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &hAppKey, nullptr) == ERROR_SUCCESS) {
+            RegSetValueExW(hAppKey, L"AppPath", 0, REG_SZ, (BYTE*)appPath.c_str(), (DWORD)(appPath.size() + 1) * 2);
+            RegSetValueExW(hAppKey, L"ObsPath", 0, REG_SZ, (BYTE*)obsPath.c_str(), (DWORD)(obsPath.size() + 1) * 2);
+            DWORD pluginVal = installedPlugin ? 1 : 0;
+            RegSetValueExW(hAppKey, L"InstalledPlugin", 0, REG_DWORD, (BYTE*)&pluginVal, sizeof(DWORD));
+            RegCloseKey(hAppKey);
         }
     }
 
@@ -720,8 +846,162 @@ private:
     HWND m_btnCancel{nullptr};
 };
 
+// ============================================================================
+// UNINSTALL FUNCTION — Called when installer is run with /uninstall flag
+// Removes all files from all known locations, shortcuts, registry entries.
+// ============================================================================
+static void ExecuteUninstall() {
+    // Read saved install paths from registry
+    std::wstring appPath, obsPath;
+    DWORD installedPlugin = 0;
+
+    HKEY hAppKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, APP_REG_KEY, 0, KEY_READ, &hAppKey) == ERROR_SUCCESS) {
+        wchar_t buf[MAX_PATH] = {0};
+        DWORD bufSize;
+
+        bufSize = sizeof(buf);
+        if (RegQueryValueExW(hAppKey, L"AppPath", nullptr, nullptr, (BYTE*)buf, &bufSize) == ERROR_SUCCESS)
+            appPath = buf;
+
+        memset(buf, 0, sizeof(buf));
+        bufSize = sizeof(buf);
+        if (RegQueryValueExW(hAppKey, L"ObsPath", nullptr, nullptr, (BYTE*)buf, &bufSize) == ERROR_SUCCESS)
+            obsPath = buf;
+
+        bufSize = sizeof(DWORD);
+        RegQueryValueExW(hAppKey, L"InstalledPlugin", nullptr, nullptr, (BYTE*)&installedPlugin, &bufSize);
+        RegCloseKey(hAppKey);
+    }
+
+    // Confirm with user
+    std::wstring confirmMsg = L"Apakah Anda yakin ingin menghapus Lala Live Chat Overlay?\n\n";
+    confirmMsg += L"Yang akan dihapus:\n";
+    if (installedPlugin) confirmMsg += L"  \u2022 Plugin OBS (yt-chat-overlay.dll) dari semua lokasi\n";
+    if (!appPath.empty()) confirmMsg += L"  \u2022 Aplikasi di: " + appPath + L"\n";
+    confirmMsg += L"  \u2022 Pintasan Desktop & Start Menu\n";
+    confirmMsg += L"  \u2022 Entri di Add/Remove Programs\n";
+    confirmMsg += L"\nKonfigurasi pengguna TIDAK akan dihapus.";
+
+    int res = MessageBoxW(nullptr, confirmMsg.c_str(), L"Uninstall Lala Live Chat Overlay", MB_YESNO | MB_ICONQUESTION);
+    if (res != IDYES) return;
+
+    // Close OBS if running
+    HWND hObs = FindWindowW(L"OBSWindowClass", nullptr);
+    if (hObs) {
+        int closeRes = MessageBoxW(nullptr, L"OBS Studio terdeteksi sedang berjalan.\nPerlu ditutup agar plugin dapat dihapus.\n\nTutup OBS sekarang?",
+                                   L"OBS Sedang Berjalan", MB_YESNO | MB_ICONQUESTION);
+        if (closeRes == IDYES) {
+            system("taskkill /F /IM obs64.exe >nul 2>&1");
+            system("taskkill /F /IM obs.exe >nul 2>&1");
+            Sleep(1500);
+        }
+    }
+
+    // 1. Remove plugin DLL from all known locations
+    if (installedPlugin) {
+        // OBS Plugins dir (old layout)
+        if (!obsPath.empty()) {
+            DeleteFileW((obsPath + L"\\obs-plugins\\64bit\\yt-chat-overlay.dll").c_str());
+            DeleteFileW((obsPath + L"\\obs-plugins\\yt-chat-overlay.dll").c_str());
+        }
+
+        // Also clean common OBS locations
+        DeleteFileW(L"C:\\Program Files\\obs-studio\\obs-plugins\\64bit\\yt-chat-overlay.dll");
+        DeleteFileW(L"C:\\Program Files\\obs-studio\\obs-plugins\\yt-chat-overlay.dll");
+
+        // ProgramData
+        RemoveDirectoryRecursive(L"C:\\ProgramData\\obs-studio\\plugins\\yt-chat-overlay");
+
+        // AppData user plugin dir
+        wchar_t appData[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appData))) {
+            RemoveDirectoryRecursive(std::wstring(appData) + L"\\obs-studio\\plugins\\yt-chat-overlay");
+        }
+
+        // Also clean old plugin names
+        if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appData))) {
+            RemoveDirectoryRecursive(std::wstring(appData) + L"\\obs-studio\\plugins\\lala-chat-overlay");
+            RemoveDirectoryRecursive(std::wstring(appData) + L"\\obs-studio\\plugins\\lala-chatstream");
+            RemoveDirectoryRecursive(std::wstring(appData) + L"\\obs-studio\\plugins\\chatstream-obs");
+        }
+        RemoveDirectoryRecursive(L"C:\\ProgramData\\obs-studio\\plugins\\lala-chat-overlay");
+        DeleteFileW(L"C:\\Program Files\\obs-studio\\obs-plugins\\64bit\\lala-chat-overlay.dll");
+    }
+
+    // 2. Remove shortcuts
+    wchar_t desktop[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_DESKTOPDIRECTORY, nullptr, 0, desktop))) {
+        DeleteFileW((std::wstring(desktop) + L"\\Lala Live Chat Overlay.lnk").c_str());
+    }
+    wchar_t startMenu[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_PROGRAMS, nullptr, 0, startMenu))) {
+        DeleteFileW((std::wstring(startMenu) + L"\\Lala Live Chat Overlay.lnk").c_str());
+    }
+
+    // 3. Remove app files (but NOT config — user may want to keep settings)
+    if (!appPath.empty()) {
+        DeleteFileW((appPath + L"\\LalaLiveChatOverlay.exe").c_str());
+        DeleteFileW((appPath + L"\\YouTubeChatOverlay.exe").c_str());
+        DeleteFileW((appPath + L"\\yt-chat-overlay.dll").c_str());
+        DeleteFileW((appPath + L"\\lala_icon.ico").c_str());
+        // Don't delete Uninstall.exe yet — it's running! Schedule self-delete.
+    }
+
+    // 4. Remove registry entries
+    RegDeleteKeyW(HKEY_CURRENT_USER, UNINSTALL_REG_KEY);
+    RegDeleteKeyW(HKEY_CURRENT_USER, APP_REG_KEY);
+
+    MessageBoxW(nullptr,
+        L"Lala Live Chat Overlay berhasil dihapus!\n\n"
+        L"Catatan: Konfigurasi pengguna di AppData\\obs-studio\\plugin_config\\yt-chat-overlay\n"
+        L"tetap tersimpan (jika ingin install ulang nanti, pengaturan masih ada).\n\n"
+        L"File Uninstall.exe di folder aplikasi dapat dihapus manual.",
+        L"Uninstall Selesai", MB_OK | MB_ICONINFORMATION);
+
+    // 5. Schedule self-delete via cmd (delete uninstaller exe + empty app folder)
+    if (!appPath.empty()) {
+        std::wstring cmd = L"cmd /c timeout /t 2 /nobreak >nul & del /f /q \"" + appPath + L"\\Uninstall.exe\" & rmdir \"" + appPath + L"\"";
+        STARTUPINFOW si = { sizeof(si) };
+        si.dwFlags = STARTF_USESHOWWINDOW;
+        si.wShowWindow = SW_HIDE;
+        PROCESS_INFORMATION pi = {0};
+        CreateProcessW(nullptr, (LPWSTR)cmd.c_str(), nullptr, nullptr, FALSE,
+                      CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
+        if (pi.hProcess) CloseHandle(pi.hProcess);
+        if (pi.hThread) CloseHandle(pi.hThread);
+    }
+}
+
+// Helper: Recursively remove a directory
+static void RemoveDirectoryRecursive(const std::wstring& path) {
+    std::wstring searchPath = path + L"\\*";
+    WIN32_FIND_DATAW fd;
+    HANDLE hFind = FindFirstFileW(searchPath.c_str(), &fd);
+    if (hFind == INVALID_HANDLE_VALUE) return;
+
+    do {
+        if (wcscmp(fd.cFileName, L".") == 0 || wcscmp(fd.cFileName, L"..") == 0) continue;
+        std::wstring fullPath = path + L"\\" + fd.cFileName;
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            RemoveDirectoryRecursive(fullPath);
+        } else {
+            DeleteFileW(fullPath.c_str());
+        }
+    } while (FindNextFileW(hFind, &fd));
+    FindClose(hFind);
+    RemoveDirectoryW(path.c_str());
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+    // Check if launched in uninstall mode
+    if (lpCmdLine && (strstr(lpCmdLine, "/uninstall") || strstr(lpCmdLine, "-uninstall"))) {
+        ExecuteUninstall();
+        return 0;
+    }
+
     InstallerWizard wizard;
     wizard.ShowWizard();
     return 0;

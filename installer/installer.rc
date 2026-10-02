@@ -9,5 +9,9 @@
 IDI_APP_ICON   ICON    "../assets/lala_icon.ico"
 IDR_LOGO_PNG   RCDATA  "../assets/png/lala_logo_horizontal_transparent_1200x400.png"
 IDR_ICON_PNG   RCDATA  "../assets/png/lala_icon_app_64.png"
-IDR_PLUGIN_DLL RCDATA  "../yt-chat-overlay.dll"
-IDR_APP_EXE    RCDATA  "../YouTubeChatOverlay.exe"
+
+// Embed the statically-linked plugin DLL and standalone exe.
+// These are built with /MT so end users don't need MSVC Redistributable.
+// The plugin supports both Qt5 (OBS 25-27) and Qt6 (OBS 28+).
+IDR_PLUGIN_DLL RCDATA  "../build/yt-chat-overlay.dll"
+IDR_APP_EXE    RCDATA  "../build/YouTubeChatOverlay.exe"
