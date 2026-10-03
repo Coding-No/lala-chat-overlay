@@ -2,11 +2,16 @@
 #include <algorithm>
 
 UserRole UserMetadataParser::ParseRole(const nlohmann::json& renderer) {
-    if (!renderer.contains("authorBadges") || !renderer["authorBadges"].is_array()) {
-        return UserRole::Regular;
+    UserRole highestRole = UserRole::Regular;
+
+    // Detect membership item renderer indicators
+    if (renderer.contains("headerSubtext") || renderer.contains("headerPrimaryText") || renderer.contains("sponsorshipsHeader")) {
+        highestRole = UserRole::Member;
     }
 
-    UserRole highestRole = UserRole::Regular;
+    if (!renderer.contains("authorBadges") || !renderer["authorBadges"].is_array()) {
+        return highestRole;
+    }
 
     for (const auto& badge : renderer["authorBadges"]) {
         if (!badge.contains("liveChatAuthorBadgeRenderer")) continue;

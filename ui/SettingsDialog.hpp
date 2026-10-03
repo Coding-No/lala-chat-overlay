@@ -12,6 +12,8 @@
 #pragma comment(lib, "gdiplus.lib")
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "comdlg32.lib")
+#pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "wininet.lib")
 
 class SettingsDialog {
 public:
@@ -55,13 +57,20 @@ private:
     HWND m_lblSec4{nullptr};
     HWND m_lblSec5{nullptr};
 
-    // Control handles
+#define WM_SYNC_CONFIG (WM_USER + 101)
+
     HWND m_hEditUrl{nullptr};
     HWND m_btnStart{nullptr};
     HWND m_btnStop{nullptr};
     HWND m_btnPreview{nullptr};
+    HWND m_btnSaveConfig{nullptr};
+    HWND m_btnLoadConfig{nullptr};
     HWND m_lblStatus{nullptr};
     HWND m_lblMessages{nullptr};
+
+    void SaveConfigToDisk();
+    void LoadConfigFromDisk();
+    bool m_populatingControls{false};
 
     HWND m_cbFont{nullptr};
     HWND m_sliderFontSize{nullptr};
@@ -87,6 +96,8 @@ private:
     HWND m_cbFilter{nullptr};
 
     HWND m_chkMessageBold{nullptr};
+    HWND m_chkExtraBold{nullptr};
+    HWND m_chkMotionBlur{nullptr};
     HWND m_chkShowBg{nullptr};
     HWND m_btnColBg{nullptr};
     HWND m_sliderBgOpacity{nullptr};
@@ -100,6 +111,7 @@ private:
 
     HWND m_btnCheckUpdate{nullptr};
     HWND m_btnDonate{nullptr};
+    std::atomic<bool> m_isUpdating{false};
 
     HBRUSH m_hBgBrush{nullptr};
     HBRUSH m_hCardBrush{nullptr};

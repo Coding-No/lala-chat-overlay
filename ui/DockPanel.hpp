@@ -17,6 +17,9 @@ public:
     void UpdateStatusText(ChatProviderStatus status, const std::string& info);
     void UpdateMessageCount(uint64_t count);
 
+    void SyncToController();
+    void SyncFromController();
+
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     void CreateControls(HWND hwnd);
@@ -33,6 +36,7 @@ private:
     HWND m_btnStop{nullptr};
     HWND m_btnPreview{nullptr};
     HWND m_btnSettings{nullptr};
+    HWND m_btnLoadDock{nullptr};
     HWND m_chkDockBg{nullptr};
     HWND m_chkDockBold{nullptr};
     HWND m_lblStatus{nullptr};

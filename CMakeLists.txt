@@ -56,6 +56,8 @@ set(WIN32_LIBS
     shell32
     comdlg32
     advapi32
+    urlmon
+    wininet
 )
 
 # 1. OBS Plugin DLL (yt-chat-overlay.dll)
@@ -70,7 +72,7 @@ set_target_properties(yt-chat-overlay PROPERTIES
     PREFIX ""
 )
 
-# 2. Standalone Application (LalaLiveChatOverlay.exe and YouTubeChatOverlay.exe)
+# 2. Standalone Application (LalaLiveChatOverlay.exe)
 add_executable(LalaLiveChatOverlay WIN32
     main.cpp
     ${CORE_SOURCES}
@@ -78,27 +80,13 @@ add_executable(LalaLiveChatOverlay WIN32
 )
 target_link_libraries(LalaLiveChatOverlay PRIVATE ${WIN32_LIBS})
 
-add_executable(YouTubeChatOverlay WIN32
-    main.cpp
-    ${CORE_SOURCES}
-    app.rc
-)
-target_link_libraries(YouTubeChatOverlay PRIVATE ${WIN32_LIBS})
-
-# 3. One-Click Installer (LalaLiveChatOverlaySetup.exe and YouTubeChatOverlaySetup.exe)
+# 3. One-Click Installer (LalaLiveChatOverlaySetup.exe)
 add_executable(LalaLiveChatOverlaySetup WIN32
     installer/installer_main.cpp
     installer/installer.rc
 )
 target_link_libraries(LalaLiveChatOverlaySetup PRIVATE ${WIN32_LIBS})
-add_dependencies(LalaLiveChatOverlaySetup yt-chat-overlay YouTubeChatOverlay LalaLiveChatOverlay)
-
-add_executable(YouTubeChatOverlaySetup WIN32
-    installer/installer_main.cpp
-    installer/installer.rc
-)
-target_link_libraries(YouTubeChatOverlaySetup PRIVATE ${WIN32_LIBS})
-add_dependencies(YouTubeChatOverlaySetup yt-chat-overlay YouTubeChatOverlay LalaLiveChatOverlay)
+add_dependencies(LalaLiveChatOverlaySetup yt-chat-overlay LalaLiveChatOverlay)
 
 # 4. Phase Tests
 add_executable(test_overlay_poc tests/test_overlay_poc.cpp overlay/WindowsOverlayWindow.cpp overlay/ChatRenderer.cpp)

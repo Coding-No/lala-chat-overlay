@@ -5,7 +5,8 @@
 #define MyAppName "Lala Live Chat Overlay"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Coding-No"
-#define MyAppURL "https://github.com/Coding-No"
+#define MyAppURL "https://github.com/Coding-No/lala-chat-overlay"
+#define MyAppUpdatesURL "https://github.com/Coding-No/lala-chat-overlay/releases"
 #define MyAppExeName "LalaLiveChatOverlay.exe"
 
 [Setup]
@@ -15,11 +16,11 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
+AppUpdatesURL={#MyAppUpdatesURL}
 DefaultDirName={autopf64}\obs-studio\obs-plugins\64bit
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-OutputBaseFilename=YouTubeChatOverlaySetup
+OutputBaseFilename=LalaLiveChatOverlaySetup
 Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible

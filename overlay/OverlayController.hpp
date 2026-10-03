@@ -41,6 +41,7 @@ private:
     void OnMessageReceived(const ChatMessage& msg);
     void OnAvatarDownloaded(const std::string& url, const std::vector<uint8_t>& data);
     void InjectPreviewMessages();
+    void CyclePreviewMessage();
     void TrackGameWindow();
 
     ChatConfig m_config;

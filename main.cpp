@@ -9,7 +9,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     ChatConfig config;
-    config.loadFromFile("config/overlay_config.json");
+    config.loadStandardConfig();
 
     OverlayController controller;
     if (!controller.Initialize(config)) {
@@ -33,8 +33,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // Save configuration before exit
-    CreateDirectoryW(L"config", nullptr);
-    controller.GetConfig().saveToFile("config/overlay_config.json");
+    controller.GetConfig().saveStandardConfig();
 
     controller.Shutdown();
     return 0;

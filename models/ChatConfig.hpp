@@ -1,4 +1,6 @@
 #pragma once
+#include <windows.h>
+#include <shlobj.h>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -43,6 +45,7 @@ struct ChatConfig {
     int fontSize{16};
     bool usernameBold{true};
     bool messageBold{true}; // Bold by default for crisp legibility over games
+    bool extraBold{true};   // Extra bold for high-contrast visibility over games
     
     // Background Card
     bool showBackground{true};
@@ -68,6 +71,7 @@ struct ChatConfig {
     
     // Behavior & Effects
     OverlayAnimation animation{OverlayAnimation::Fade};
+    bool motionBlur{true}; // Silky smooth motion blur for animations
     int autoHideSeconds{0}; // 0 = disabled
     RoleFilter filter{RoleFilter::Everyone};
     bool autoFollowGame{false};
@@ -130,6 +134,7 @@ struct ChatConfig {
         j["font_size"] = fontSize;
         j["username_bold"] = usernameBold;
         j["message_bold"] = messageBold;
+        j["extra_bold"] = extraBold;
         j["show_background"] = showBackground;
         j["background_color"] = backgroundColor;
         j["background_opacity"] = backgroundOpacity;
@@ -146,6 +151,7 @@ struct ChatConfig {
         j["spacing"] = spacing;
         j["max_width"] = maxWidth;
         j["animation"] = AnimationToString(animation);
+        j["motion_blur"] = motionBlur;
         j["auto_hide"] = autoHideSeconds;
         j["filter"] = static_cast<int>(filter);
         j["auto_follow_game"] = autoFollowGame;
@@ -162,6 +168,7 @@ struct ChatConfig {
             if (j.contains("font_size")) fontSize = j["font_size"].get<int>();
             if (j.contains("username_bold")) usernameBold = j["username_bold"].get<bool>();
             if (j.contains("message_bold")) messageBold = j["message_bold"].get<bool>();
+            if (j.contains("extra_bold")) extraBold = j["extra_bold"].get<bool>();
             if (j.contains("show_background")) showBackground = j["show_background"].get<bool>();
             if (j.contains("background_color")) backgroundColor = j["background_color"].get<uint32_t>();
             if (j.contains("background_opacity")) backgroundOpacity = j["background_opacity"].get<float>();
@@ -178,6 +185,7 @@ struct ChatConfig {
             if (j.contains("spacing")) spacing = j["spacing"].get<int>();
             if (j.contains("max_width")) maxWidth = j["max_width"].get<int>();
             if (j.contains("animation")) animation = StringToAnimation(j["animation"].get<std::string>());
+            if (j.contains("motion_blur")) motionBlur = j["motion_blur"].get<bool>();
             if (j.contains("auto_hide")) autoHideSeconds = j["auto_hide"].get<int>();
             if (j.contains("filter")) filter = static_cast<RoleFilter>(j["filter"].get<int>());
             if (j.contains("auto_follow_game")) autoFollowGame = j["auto_follow_game"].get<bool>();
@@ -200,5 +208,32 @@ struct ChatConfig {
         std::stringstream buf;
         buf << f.rdbuf();
         return fromJsonString(buf.str());
+    }
+
+    static std::string GetStandardConfigPath() {
+        wchar_t appData[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, 0, appData))) {
+            std::wstring dir = std::wstring(appData) + L"\\LalaLiveChatOverlay";
+            CreateDirectoryW(dir.c_str(), nullptr);
+            std::wstring file = dir + L"\\overlay_config.json";
+            char u8[MAX_PATH * 2] = {0};
+            WideCharToMultiByte(CP_UTF8, 0, file.c_str(), -1, u8, sizeof(u8), nullptr, nullptr);
+            return std::string(u8);
+        }
+        return "config/overlay_config.json";
+    }
+
+    bool loadStandardConfig() {
+        std::string stdPath = GetStandardConfigPath();
+        if (loadFromFile(stdPath)) return true;
+        return loadFromFile("config/overlay_config.json");
+    }
+
+    bool saveStandardConfig() const {
+        std::string stdPath = GetStandardConfigPath();
+        bool ok = saveToFile(stdPath);
+        CreateDirectoryW(L"config", nullptr);
+        saveToFile("config/overlay_config.json");
+        return ok;
     }
 };

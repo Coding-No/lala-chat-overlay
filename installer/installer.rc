@@ -14,4 +14,4 @@ IDR_ICON_PNG   RCDATA  "../assets/png/lala_icon_app_64.png"
 // These are built with /MT so end users don't need MSVC Redistributable.
 // The plugin supports both Qt5 (OBS 25-27) and Qt6 (OBS 28+).
 IDR_PLUGIN_DLL RCDATA  "../build/yt-chat-overlay.dll"
-IDR_APP_EXE    RCDATA  "../build/YouTubeChatOverlay.exe"
+IDR_APP_EXE    RCDATA  "../build/LalaLiveChatOverlay.exe"

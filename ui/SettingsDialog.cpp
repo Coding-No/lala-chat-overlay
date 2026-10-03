@@ -1,6 +1,8 @@
 #include "SettingsDialog.hpp"
 #include <shellapi.h>
 #include <commctrl.h>
+#include <urlmon.h>
+#include <wininet.h>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
@@ -8,6 +10,8 @@
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "wininet.lib")
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
@@ -111,7 +115,10 @@ SettingsDialog::~SettingsDialog() {
 }
 
 bool SettingsDialog::Show(HWND parentHwnd) {
+    m_config = m_controller.GetConfig();
+
     if (m_running && m_hwnd && IsWindow(m_hwnd)) {
+        SendMessageW(m_hwnd, WM_SYNC_CONFIG, 0, 0);
         ShowWindow(m_hwnd, SW_SHOW);
         SetForegroundWindow(m_hwnd);
         return true;
@@ -230,12 +237,14 @@ void SettingsDialog::CreateControls(HWND hwnd) {
     CreateWindowW(L"STATIC", L"YouTube Live Stream URL:", WS_CHILD | WS_VISIBLE, 26, 114, 250, 18, hwnd, nullptr, hInst, nullptr);
     m_hEditUrl = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 26, 134, 532, 26, hwnd, nullptr, hInst, nullptr);
 
-    m_btnStart = CreateWindowW(L"BUTTON", L"START", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 26, 168, 92, 30, hwnd, (HMENU)1001, hInst, nullptr);
-    m_btnStop = CreateWindowW(L"BUTTON", L"STOP", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 126, 168, 92, 30, hwnd, (HMENU)1002, hInst, nullptr);
-    m_btnPreview = CreateWindowW(L"BUTTON", L"PREVIEW", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 226, 168, 105, 30, hwnd, (HMENU)1003, hInst, nullptr);
+    m_btnStart = CreateWindowW(L"BUTTON", L"START", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 26, 168, 70, 30, hwnd, (HMENU)1001, hInst, nullptr);
+    m_btnStop = CreateWindowW(L"BUTTON", L"STOP", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 100, 168, 68, 30, hwnd, (HMENU)1002, hInst, nullptr);
+    m_btnPreview = CreateWindowW(L"BUTTON", L"PREVIEW", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 172, 168, 86, 30, hwnd, (HMENU)1003, hInst, nullptr);
+    m_btnSaveConfig = CreateWindowW(L"BUTTON", L"SIMPAN", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 262, 168, 84, 30, hwnd, (HMENU)1004, hInst, nullptr);
+    m_btnLoadConfig = CreateWindowW(L"BUTTON", L"LOAD", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 350, 168, 80, 30, hwnd, (HMENU)1005, hInst, nullptr);
 
-    m_lblStatus = CreateWindowW(L"STATIC", L"Status: Terputus", WS_CHILD | WS_VISIBLE, 348, 166, 210, 16, hwnd, nullptr, hInst, nullptr);
-    m_lblMessages = CreateWindowW(L"STATIC", L"Pesan: 0", WS_CHILD | WS_VISIBLE, 348, 184, 210, 16, hwnd, nullptr, hInst, nullptr);
+    m_lblStatus = CreateWindowW(L"STATIC", L"Status: Terputus", WS_CHILD | WS_VISIBLE, 436, 166, 122, 16, hwnd, nullptr, hInst, nullptr);
+    m_lblMessages = CreateWindowW(L"STATIC", L"Pesan: 0", WS_CHILD | WS_VISIBLE, 436, 184, 122, 16, hwnd, nullptr, hInst, nullptr);
 
     // Section 2: Appearance (y=216 to 484)
     m_lblSec2 = CreateWindowW(L"STATIC", L"\x25CF PENGATURAN TAMPILAN (APPEARANCE)", WS_CHILD | WS_VISIBLE, 26, 222, 400, 18, hwnd, nullptr, hInst, nullptr);
@@ -244,6 +253,7 @@ void SettingsDialog::CreateControls(HWND hwnd) {
     CreateWindowW(L"STATIC", L"Font:", WS_CHILD | WS_VISIBLE, 26, 246, 65, 20, hwnd, nullptr, hInst, nullptr);
     m_cbFont = CreateWindowW(L"COMBOBOX", L"", WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL, 95, 242, 165, 200, hwnd, (HMENU)1010, hInst, nullptr);
     SendMessageW(m_cbFont, CB_ADDSTRING, 0, (LPARAM)L"Segoe UI");
+    SendMessageW(m_cbFont, CB_ADDSTRING, 0, (LPARAM)L"Segoe UI Emoji");
     SendMessageW(m_cbFont, CB_ADDSTRING, 0, (LPARAM)L"Arial");
     SendMessageW(m_cbFont, CB_ADDSTRING, 0, (LPARAM)L"Roboto");
     SendMessageW(m_cbFont, CB_ADDSTRING, 0, (LPARAM)L"Consolas");
@@ -328,7 +338,8 @@ void SettingsDialog::CreateControls(HWND hwnd) {
 
     // Game Tracking & Bold
     m_chkAutoFollow = CreateWindowW(L"BUTTON", L"Auto Follow Game Window", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 285, 436, 270, 22, hwnd, (HMENU)1023, hInst, nullptr);
-    m_chkMessageBold = CreateWindowW(L"BUTTON", L"Bold Font (Teks Pesan Chat Tebal)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 26, 464, 280, 22, hwnd, (HMENU)1024, hInst, nullptr);
+    m_chkMessageBold = CreateWindowW(L"BUTTON", L"Bold Font (Tebal)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 26, 464, 250, 22, hwnd, (HMENU)1024, hInst, nullptr);
+    m_chkExtraBold = CreateWindowW(L"BUTTON", L"Extra Bold (Super Tebal)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 285, 464, 270, 22, hwnd, (HMENU)1027, hInst, nullptr);
 
     // Section 3: Chat Background (y=494 to 574)
     m_lblSec3 = CreateWindowW(L"STATIC", L"\x25CF LATAR BELAKANG CHAT (BACKGROUND)", WS_CHILD | WS_VISIBLE, 26, 498, 400, 18, hwnd, nullptr, hInst, nullptr);
@@ -342,6 +353,8 @@ void SettingsDialog::CreateControls(HWND hwnd) {
     m_sliderBgOpacity = CreateWindowW(TRACKBAR_CLASSW, L"", WS_CHILD | WS_VISIBLE | TBS_HORZ, 105, 545, 135, 26, hwnd, (HMENU)1026, hInst, nullptr);
     SendMessageW(m_sliderBgOpacity, TBM_SETRANGE, TRUE, MAKELPARAM(0, 100));
     m_lblBgOpacityVal = CreateWindowW(L"STATIC", L"65%", WS_CHILD | WS_VISIBLE, 248, 550, 45, 20, hwnd, nullptr, hInst, nullptr);
+
+    m_chkMotionBlur = CreateWindowW(L"BUTTON", L"Motion Blur (Animasi Halus & Dinamis)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 305, 548, 255, 22, hwnd, (HMENU)1028, hInst, nullptr);
 
     // Section 4: Text Colors (y=584 to 668)
     m_lblSec4 = CreateWindowW(L"STATIC", L"\x25CF WARNA TEKS & IDENTITAS PENGGUNA", WS_CHILD | WS_VISIBLE, 26, 588, 400, 18, hwnd, nullptr, hInst, nullptr);
@@ -391,11 +404,16 @@ void SettingsDialog::CreateControls(HWND hwnd) {
     SendMessageW(m_lblSec4, WM_SETFONT, (WPARAM)m_hFontSection, TRUE);
     SendMessageW(m_lblSec5, WM_SETFONT, (WPARAM)m_hFontSection, TRUE);
     SendMessageW(m_lblSig, WM_SETFONT, (WPARAM)m_hFontSmall, TRUE);
+    if (m_btnLoadConfig) {
+        SendMessageW(m_btnLoadConfig, WM_SETFONT, (WPARAM)m_hFontBold, TRUE);
+    }
 
     PopulateControlsFromConfig();
 }
 
 void SettingsDialog::PopulateControlsFromConfig() {
+    m_populatingControls = true;
+
     // Populate URL
     std::wstring wUrl(m_config.youtubeUrl.begin(), m_config.youtubeUrl.end());
     SetWindowTextW(m_hEditUrl, wUrl.c_str());
@@ -466,6 +484,12 @@ void SettingsDialog::PopulateControlsFromConfig() {
     // Bold Font Checkbox
     SendMessageW(m_chkMessageBold, BM_SETCHECK, m_config.messageBold ? BST_CHECKED : BST_UNCHECKED, 0);
 
+    // Extra Bold Font Checkbox
+    SendMessageW(m_chkExtraBold, BM_SETCHECK, m_config.extraBold ? BST_CHECKED : BST_UNCHECKED, 0);
+
+    // Motion Blur Checkbox
+    SendMessageW(m_chkMotionBlur, BM_SETCHECK, m_config.motionBlur ? BST_CHECKED : BST_UNCHECKED, 0);
+
     // Chat Background Checkbox & Slider
     SendMessageW(m_chkShowBg, BM_SETCHECK, m_config.showBackground ? BST_CHECKED : BST_UNCHECKED, 0);
     int bgOpVal = (int)(m_config.backgroundOpacity * 100.0f);
@@ -474,6 +498,8 @@ void SettingsDialog::PopulateControlsFromConfig() {
 
     // Filter
     SendMessageW(m_cbFilter, CB_SETCURSEL, (int)m_config.filter, 0);
+
+    m_populatingControls = false;
 }
 
 void SettingsDialog::SaveConfigFromControls() {
@@ -542,8 +568,10 @@ void SettingsDialog::SaveConfigFromControls() {
     // 12. Auto Follow
     m_config.autoFollowGame = (SendMessageW(m_chkAutoFollow, BM_GETCHECK, 0, 0) == BST_CHECKED);
 
-    // 13. Bold Message Font
+    // 13. Bold & Extra Bold Message Font & Motion Blur
     m_config.messageBold = (SendMessageW(m_chkMessageBold, BM_GETCHECK, 0, 0) == BST_CHECKED);
+    m_config.extraBold = (SendMessageW(m_chkExtraBold, BM_GETCHECK, 0, 0) == BST_CHECKED);
+    m_config.motionBlur = (SendMessageW(m_chkMotionBlur, BM_GETCHECK, 0, 0) == BST_CHECKED);
 
     // 14. Chat Background
     m_config.showBackground = (SendMessageW(m_chkShowBg, BM_GETCHECK, 0, 0) == BST_CHECKED);
@@ -557,6 +585,32 @@ void SettingsDialog::SaveConfigFromControls() {
 
     // Apply live updates directly to controller
     m_controller.UpdateConfig(m_config);
+}
+
+void SettingsDialog::SaveConfigToDisk() {
+    SaveConfigFromControls();
+    m_config.saveStandardConfig();
+    if (m_btnSaveConfig && IsWindow(m_btnSaveConfig)) {
+        SetWindowTextW(m_btnSaveConfig, L"TERSIMPAN! \x2714");
+        InvalidateRect(m_btnSaveConfig, nullptr, TRUE);
+        SetTimer(m_hwnd, 2, 2000, nullptr);
+    }
+    UpdateStatusText(ChatProviderStatus::Connected, "Pengaturan tersimpan");
+}
+
+void SettingsDialog::LoadConfigFromDisk() {
+    if (m_config.loadStandardConfig()) {
+        m_controller.UpdateConfig(m_config);
+        PopulateControlsFromConfig();
+        if (m_btnLoadConfig && IsWindow(m_btnLoadConfig)) {
+            SetWindowTextW(m_btnLoadConfig, L"TER-LOAD! \x2714");
+            InvalidateRect(m_btnLoadConfig, nullptr, TRUE);
+            SetTimer(m_hwnd, 3, 2000, nullptr);
+        }
+        UpdateStatusText(ChatProviderStatus::Connected, "Pengaturan berhasil di-load");
+    } else {
+        UpdateStatusText(ChatProviderStatus::Error, "File setting belum ada/gagal di-load");
+    }
 }
 
 void SettingsDialog::OnColorPick(uint32_t& targetColor, HWND buttonHwnd) {
@@ -581,16 +635,105 @@ void SettingsDialog::OnColorPick(uint32_t& targetColor, HWND buttonHwnd) {
 }
 
 void SettingsDialog::CheckUpdate() {
-    MessageBoxW(
+    if (m_isUpdating) {
+        MessageBoxW(
+            m_hwnd,
+            L"Pengunduhan pembaruan installer sedang berlangsung di latar belakang.\nMohon tunggu sejenak hingga proses selesai.",
+            L"Sedang Mengunduh - Lala Live Chat Overlay",
+            MB_OK | MB_ICONINFORMATION
+        );
+        return;
+    }
+
+    int choice = MessageBoxW(
         m_hwnd,
-        L"Lala Live Chat Overlay (v1.0.0 Resmi)\n"
-        L"Dikembangkan oleh Coding-No\n\n"
-        L"Membuka halaman GitHub resmi untuk update dan rilis:\n"
-        L"https://github.com/Coding-No",
-        L"Pembaruan - Lala Live Chat Overlay",
-        MB_OK | MB_ICONINFORMATION
+        L"Pembaruan Resmi Lala Live Chat Overlay (v1.0.0)\n"
+        L"Developer: Coding-No\n\n"
+        L"Repositori: https://github.com/Coding-No/lala-chat-overlay/releases\n\n"
+        L"Apakah Anda ingin mengunduh otomatis installer versi terbaru (LalaLiveChatOverlaySetup.exe)?\n\n"
+        L"[Ya]     : Unduh otomatis installer versi terbaru ke komputer sekarang.\n"
+        L"[Tidak]  : Buka halaman rilis GitHub di browser web.\n"
+        L"[Batal]  : Kembali ke pengaturan.",
+        L"Cek Pembaruan - Lala Live Chat Overlay",
+        MB_YESNOCANCEL | MB_ICONQUESTION
     );
-    ShellExecuteW(nullptr, L"open", L"https://github.com/Coding-No", nullptr, nullptr, SW_SHOWNORMAL);
+
+    if (choice == IDCANCEL) {
+        return;
+    }
+
+    if (choice == IDNO) {
+        ShellExecuteW(nullptr, L"open", L"https://github.com/Coding-No/lala-chat-overlay/releases", nullptr, nullptr, SW_SHOWNORMAL);
+        return;
+    }
+
+    // IDYES: Unduh otomatis di thread background
+    m_isUpdating = true;
+    if (m_btnCheckUpdate && IsWindow(m_btnCheckUpdate)) {
+        SetWindowTextW(m_btnCheckUpdate, L"MENGUNDUH...");
+        InvalidateRect(m_btnCheckUpdate, nullptr, TRUE);
+    }
+
+    std::thread([this]() {
+        // Link aset rilis langsung dari GitHub
+        const wchar_t* downloadUrl = L"https://github.com/Coding-No/lala-chat-overlay/releases/latest/download/LalaLiveChatOverlaySetup.exe";
+
+        wchar_t tempDir[MAX_PATH];
+        GetTempPathW(MAX_PATH, tempDir);
+        std::wstring targetExe = std::wstring(tempDir) + L"LalaLiveChatOverlaySetup.exe";
+
+        // Bersihkan cache agar selalu mengunduh file rilis yang paling segar
+        DeleteUrlCacheEntryW(downloadUrl);
+
+        HRESULT hr = URLDownloadToFileW(nullptr, downloadUrl, targetExe.c_str(), 0, nullptr);
+
+        DWORD fileSize = 0;
+        HANDLE hFile = CreateFileW(targetExe.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (hFile != INVALID_HANDLE_VALUE) {
+            fileSize = GetFileSize(hFile, nullptr);
+            CloseHandle(hFile);
+        }
+
+        m_isUpdating = false;
+        if (m_btnCheckUpdate && IsWindow(m_btnCheckUpdate)) {
+            SetWindowTextW(m_btnCheckUpdate, L"UPDATE GITHUB");
+            InvalidateRect(m_btnCheckUpdate, nullptr, TRUE);
+        }
+
+        // File installer setup biasanya beberapa MB (> 100 KB).
+        // Bila file < 100 KB berarti response error 404 dari GitHub.
+        if (SUCCEEDED(hr) && fileSize > 100000) {
+            int installChoice = MessageBoxW(
+                m_hwnd,
+                (L"Installer versi terbaru (LalaLiveChatOverlaySetup.exe) berhasil diunduh!\n\n"
+                 L"Lokasi: " + targetExe + L"\n\n"
+                 L"Apakah Anda ingin langsung menjalankan installer sekarang untuk memperbarui aplikasi & OBS plugin?").c_str(),
+                L"Unduhan Selesai - Lala Live Chat Overlay",
+                MB_YESNO | MB_ICONINFORMATION
+            );
+
+            if (installChoice == IDYES) {
+                ShellExecuteW(nullptr, L"open", targetExe.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+            }
+        } else {
+            if (fileSize <= 100000) {
+                DeleteFileW(targetExe.c_str());
+            }
+
+            int viewWeb = MessageBoxW(
+                m_hwnd,
+                L"Belum dapat mengunduh installer otomatis langsung dari server GitHub.\n"
+                L"(Kemungkinan file 'LalaLiveChatOverlaySetup.exe' belum diunggah ke rilis terbaru GitHub, atau koneksi terputus).\n\n"
+                L"Apakah Anda ingin membuka halaman rilis GitHub di browser?",
+                L"Info Pembaruan GitHub",
+                MB_YESNO | MB_ICONWARNING
+            );
+
+            if (viewWeb == IDYES) {
+                ShellExecuteW(nullptr, L"open", L"https://github.com/Coding-No/lala-chat-overlay/releases", nullptr, nullptr, SW_SHOWNORMAL);
+            }
+        }
+    }).detach();
 }
 
 void SettingsDialog::OpenDonate() {
@@ -652,10 +795,15 @@ void SettingsDialog::DrawButton(LPDRAWITEMSTRUCT dis) {
         SelectObject(hdc, m_hFontBold);
         const wchar_t* pText = isPreview ? L"PREVIEW [ON]" : L"PREVIEW";
         DrawTextW(hdc, pText, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-    } else if (dis->CtlID == 1050) { // UPDATE GITHUB
-        COLORREF bg = isPressed ? RGB(15, 23, 42) : RGB(30, 41, 59);
+    } else if (dis->CtlID == 1004) { // SIMPAN SETTING
+        wchar_t btnText[64] = {0};
+        GetWindowTextW(m_btnSaveConfig, btnText, 64);
+        bool isSaved = (wcsstr(btnText, L"TERSIMPAN") != nullptr);
+        COLORREF bg = isSaved ? (isPressed ? RGB(4, 120, 87) : RGB(16, 185, 129))
+                              : (isPressed ? RGB(30, 41, 59) : RGB(51, 65, 85));
+        COLORREF borderCol = isSaved ? RGB(16, 185, 129) : RGB(99, 102, 241);
         HBRUSH br = CreateSolidBrush(bg);
-        HPEN pen = CreatePen(PS_SOLID, 1, RGB(71, 85, 105));
+        HPEN pen = CreatePen(PS_SOLID, 1, borderCol);
         HGDIOBJ ob = SelectObject(hdc, br);
         HGDIOBJ op = SelectObject(hdc, pen);
         RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 8, 8);
@@ -665,9 +813,49 @@ void SettingsDialog::DrawButton(LPDRAWITEMSTRUCT dis) {
         DeleteObject(pen);
 
         SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(56, 189, 248)); // Cyan/Sky blue
+        SetTextColor(hdc, RGB(255, 255, 255));
         SelectObject(hdc, m_hFontBold);
-        DrawTextW(hdc, L"UPDATE GITHUB", -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        DrawTextW(hdc, btnText[0] ? btnText : L"SIMPAN \x2714", -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    } else if (dis->CtlID == 1005) { // LOAD SETTING
+        wchar_t btnText[64] = {0};
+        GetWindowTextW(m_btnLoadConfig, btnText, 64);
+        bool isLoaded = (wcsstr(btnText, L"TER-LOAD") != nullptr);
+        COLORREF bg = isLoaded ? (isPressed ? RGB(4, 120, 87) : RGB(16, 185, 129))
+                               : (isPressed ? RGB(30, 41, 59) : RGB(47, 51, 78));
+        COLORREF borderCol = isLoaded ? RGB(16, 185, 129) : RGB(139, 92, 246);
+        HBRUSH br = CreateSolidBrush(bg);
+        HPEN pen = CreatePen(PS_SOLID, 1, borderCol);
+        HGDIOBJ ob = SelectObject(hdc, br);
+        HGDIOBJ op = SelectObject(hdc, pen);
+        RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 8, 8);
+        SelectObject(hdc, ob);
+        SelectObject(hdc, op);
+        DeleteObject(br);
+        DeleteObject(pen);
+
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(255, 255, 255));
+        SelectObject(hdc, m_hFontBold);
+        DrawTextW(hdc, btnText[0] ? btnText : L"LOAD \x21BB", -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    } else if (dis->CtlID == 1050) { // UPDATE GITHUB
+        wchar_t btnText[64] = {0};
+        GetWindowTextW(m_btnCheckUpdate, btnText, 64);
+        COLORREF bg = isPressed ? RGB(15, 23, 42) : (m_isUpdating ? RGB(180, 83, 9) : RGB(30, 41, 59));
+        HBRUSH br = CreateSolidBrush(bg);
+        COLORREF borderCol = m_isUpdating ? RGB(245, 158, 11) : RGB(71, 85, 105);
+        HPEN pen = CreatePen(PS_SOLID, 1, borderCol);
+        HGDIOBJ ob = SelectObject(hdc, br);
+        HGDIOBJ op = SelectObject(hdc, pen);
+        RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 8, 8);
+        SelectObject(hdc, ob);
+        SelectObject(hdc, op);
+        DeleteObject(br);
+        DeleteObject(pen);
+
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, m_isUpdating ? RGB(254, 240, 138) : RGB(56, 189, 248)); // Amber if updating, Cyan if idle
+        SelectObject(hdc, m_hFontBold);
+        DrawTextW(hdc, btnText[0] ? btnText : L"UPDATE GITHUB", -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     } else if (dis->CtlID == 1051) { // DONASI TRAKTEER
         COLORREF bg = isPressed ? RGB(190, 18, 60) : RGB(225, 29, 72);
         HBRUSH br = CreateSolidBrush(bg);
@@ -739,14 +927,37 @@ LRESULT CALLBACK SettingsDialog::DialogProc(HWND hwnd, UINT msg, WPARAM wParam, 
             SettingsDialog* dlg = (SettingsDialog*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
             if (dlg) {
                 dlg->m_hwnd = hwnd;
+                dlg->m_config = dlg->m_controller.GetConfig();
                 dlg->CreateControls(hwnd);
                 SetTimer(hwnd, 1, 1000, nullptr);
             }
             return 0;
         }
+        case WM_SYNC_CONFIG: {
+            SettingsDialog* dlg = (SettingsDialog*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+            if (dlg) {
+                dlg->m_config = dlg->m_controller.GetConfig();
+                dlg->PopulateControlsFromConfig();
+            }
+            return 0;
+        }
         case WM_TIMER: {
-            if (self && wParam == 1) {
-                self->UpdateMessageCount(self->m_controller.GetMessageCount());
+            if (self) {
+                if (wParam == 1) {
+                    self->UpdateMessageCount(self->m_controller.GetMessageCount());
+                } else if (wParam == 2) {
+                    KillTimer(hwnd, 2);
+                    if (self->m_btnSaveConfig && IsWindow(self->m_btnSaveConfig)) {
+                        SetWindowTextW(self->m_btnSaveConfig, L"SIMPAN");
+                        InvalidateRect(self->m_btnSaveConfig, nullptr, TRUE);
+                    }
+                } else if (wParam == 3) {
+                    KillTimer(hwnd, 3);
+                    if (self->m_btnLoadConfig && IsWindow(self->m_btnLoadConfig)) {
+                        SetWindowTextW(self->m_btnLoadConfig, L"LOAD");
+                        InvalidateRect(self->m_btnLoadConfig, nullptr, TRUE);
+                    }
+                }
             }
             return 0;
         }
@@ -763,6 +974,7 @@ LRESULT CALLBACK SettingsDialog::DialogProc(HWND hwnd, UINT msg, WPARAM wParam, 
             int code = HIWORD(wParam);
 
             if (id == 1001) { // START
+                self->SaveConfigToDisk();
                 wchar_t urlBuf[512] = {0};
                 GetWindowTextW(self->m_hEditUrl, urlBuf, 512);
                 char u8[1024] = {0};
@@ -774,6 +986,10 @@ LRESULT CALLBACK SettingsDialog::DialogProc(HWND hwnd, UINT msg, WPARAM wParam, 
                 bool isPrev = self->m_controller.IsPreviewMode();
                 self->m_controller.SetPreviewMode(!isPrev);
                 if (self->m_btnPreview) InvalidateRect(self->m_btnPreview, nullptr, TRUE);
+            } else if (id == 1004) { // SIMPAN SETTING
+                self->SaveConfigToDisk();
+            } else if (id == 1005) { // LOAD SETTING
+                self->LoadConfigFromDisk();
             } else if (id == 1030) { // Color User
                 self->OnColorPick(self->m_config.usernameColor, (HWND)lParam);
             } else if (id == 1031) { // Color Msg
@@ -790,13 +1006,15 @@ LRESULT CALLBACK SettingsDialog::DialogProc(HWND hwnd, UINT msg, WPARAM wParam, 
                 self->CheckUpdate();
             } else if (id == 1051) { // DONATE
                 self->OpenDonate();
-            } else if (code == CBN_SELCHANGE || code == EN_CHANGE || id == 1023 || id == 1024 || id == 1025) {
-                self->SaveConfigFromControls();
+            } else if (code == CBN_SELCHANGE || code == EN_CHANGE || id == 1023 || id == 1024 || id == 1025 || id == 1027 || id == 1028) {
+                if (!self->m_populatingControls) {
+                    self->SaveConfigFromControls();
+                }
             }
             return 0;
         }
         case WM_HSCROLL: {
-            if (self) {
+            if (self && !self->m_populatingControls) {
                 self->SaveConfigFromControls();
             }
             return 0;
@@ -892,6 +1110,9 @@ LRESULT CALLBACK SettingsDialog::DialogProc(HWND hwnd, UINT msg, WPARAM wParam, 
             return (LRESULT)self->m_hBgBrush;
         }
         case WM_CLOSE: {
+            if (self) {
+                self->SaveConfigToDisk();
+            }
             ShowWindow(hwnd, SW_HIDE);
             return 0;
         }
@@ -901,9 +1122,11 @@ LRESULT CALLBACK SettingsDialog::DialogProc(HWND hwnd, UINT msg, WPARAM wParam, 
         }
         case WM_DESTROY: {
             if (self) {
+                self->SaveConfigToDisk();
                 self->m_hwnd = nullptr;
             }
             KillTimer(hwnd, 1);
+            KillTimer(hwnd, 2);
             PostQuitMessage(0);
             return 0;
         }

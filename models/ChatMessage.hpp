@@ -10,6 +10,11 @@ struct BadgeInfo {
     std::string iconUrl;
 };
 
+struct CustomEmote {
+    std::string shortcut; // e.g. ":member_cat:"
+    std::string imageUrl; // e.g. "https://yt3.ggpht.com/..."
+};
+
 struct ChatMessage {
     std::string id;
     std::string authorName;
@@ -18,6 +23,8 @@ struct ChatMessage {
     std::string messageText;
     UserRole role{UserRole::Regular};
     std::vector<BadgeInfo> badges;
+    std::vector<CustomEmote> customEmotes;
+    bool isMembershipEvent{false};
     uint64_t timestampUsec{0};
 
     // Animation & rendering runtime fields

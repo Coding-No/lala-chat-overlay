@@ -142,6 +142,16 @@ void YouTubeChatProvider::WorkerLoop() {
                     if (!msg.authorPhotoUrl.empty()) {
                         FetchAvatarAsync(msg.authorPhotoUrl);
                     }
+                    for (const auto& b : msg.badges) {
+                        if (!b.iconUrl.empty()) {
+                            FetchAvatarAsync(b.iconUrl);
+                        }
+                    }
+                    for (const auto& e : msg.customEmotes) {
+                        if (!e.imageUrl.empty()) {
+                            FetchAvatarAsync(e.imageUrl);
+                        }
+                    }
                 }
             }
 

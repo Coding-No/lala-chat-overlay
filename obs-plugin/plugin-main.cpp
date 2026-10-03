@@ -124,6 +124,9 @@ static void OnToolsMenuClicked(void* privateData) {
     }
 
     if (g_dialog) {
+        if (g_dockPanel && g_dockPanel->GetHwnd() && IsWindow(g_dockPanel->GetHwnd())) {
+            g_dockPanel->SyncToController();
+        }
         LogMessage("Calling g_dialog->Show(nullptr)...");
         bool ok = g_dialog->Show(nullptr);
         LogMessage(std::string("Dialog Show() result: ") + (ok ? "SUCCESS" : "FAILED"));

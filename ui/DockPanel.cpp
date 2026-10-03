@@ -80,7 +80,8 @@ void DockPanel::CreateControls(HWND hwnd) {
     m_btnStop = CreateWindowW(L"BUTTON", L"STOP", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 102, 66, 85, 30, hwnd, (HMENU)2002, hInst, nullptr);
     m_btnPreview = CreateWindowW(L"BUTTON", L"PREVIEW", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 192, 66, 110, 30, hwnd, (HMENU)2003, hInst, nullptr);
 
-    m_btnSettings = CreateWindowW(L"BUTTON", L"PENGATURAN LENGKAP...", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 12, 104, 290, 32, hwnd, (HMENU)2004, hInst, nullptr);
+    m_btnSettings = CreateWindowW(L"BUTTON", L"PENGATURAN LENGKAP...", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 12, 104, 210, 32, hwnd, (HMENU)2004, hInst, nullptr);
+    m_btnLoadDock = CreateWindowW(L"BUTTON", L"LOAD", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 228, 104, 74, 32, hwnd, (HMENU)2007, hInst, nullptr);
 
     m_chkDockBg = CreateWindowW(L"BUTTON", L"Latar Chat (Bg)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 12, 142, 135, 20, hwnd, (HMENU)2005, hInst, nullptr);
     m_chkDockBold = CreateWindowW(L"BUTTON", L"Teks Tebal (Bold)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 155, 142, 145, 20, hwnd, (HMENU)2006, hInst, nullptr);
@@ -99,6 +100,7 @@ void DockPanel::CreateControls(HWND hwnd) {
     }, (LPARAM)m_hFontNormal);
 
     SendMessageW(m_btnSettings, WM_SETFONT, (WPARAM)m_hFontBold, TRUE);
+    SendMessageW(m_btnLoadDock, WM_SETFONT, (WPARAM)m_hFontBold, TRUE);
     SendMessageW(m_btnStart, WM_SETFONT, (WPARAM)m_hFontBold, TRUE);
     SendMessageW(m_btnStop, WM_SETFONT, (WPARAM)m_hFontBold, TRUE);
     SendMessageW(m_btnPreview, WM_SETFONT, (WPARAM)m_hFontBold, TRUE);
@@ -120,7 +122,9 @@ void DockPanel::OnResize(int width, int height) {
     SetWindowPos(m_btnStop, nullptr, margin + btnW + 6, 66, btnW, 30, SWP_NOZORDER);
     SetWindowPos(m_btnPreview, nullptr, margin + (btnW + 6) * 2, 66, contentW - ((btnW + 6) * 2), 30, SWP_NOZORDER);
 
-    SetWindowPos(m_btnSettings, nullptr, margin, 104, contentW, 32, SWP_NOZORDER);
+    int loadW = 76;
+    SetWindowPos(m_btnSettings, nullptr, margin, 104, contentW - loadW - 6, 32, SWP_NOZORDER);
+    SetWindowPos(m_btnLoadDock, nullptr, margin + contentW - loadW, 104, loadW, 32, SWP_NOZORDER);
 
     int halfW = (contentW - 8) / 2;
     SetWindowPos(m_chkDockBg, nullptr, margin, 142, halfW, 20, SWP_NOZORDER);
@@ -201,6 +205,64 @@ void DockPanel::DrawButton(LPDRAWITEMSTRUCT dis) {
         SetTextColor(hdc, RGB(224, 231, 255));
         SelectObject(hdc, m_hFontBold);
         DrawTextW(hdc, L"\x2699 PENGATURAN LENGKAP...", -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    } else if (dis->CtlID == 2007) { // LOAD SETTING IN DOCK
+        COLORREF bg = isPressed ? RGB(30, 41, 59) : RGB(47, 51, 78);
+        HBRUSH br = CreateSolidBrush(bg);
+        HPEN pen = CreatePen(PS_SOLID, 1, RGB(139, 92, 246));
+        HGDIOBJ ob = SelectObject(hdc, br);
+        HGDIOBJ op = SelectObject(hdc, pen);
+        RoundRect(hdc, rc.left, rc.top, rc.right, rc.bottom, 6, 6);
+        SelectObject(hdc, ob);
+        SelectObject(hdc, op);
+        DeleteObject(br);
+        DeleteObject(pen);
+
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(255, 255, 255));
+        SelectObject(hdc, m_hFontBold);
+        DrawTextW(hdc, L"LOAD \x21BB", -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    }
+}
+
+void DockPanel::SyncToController() {
+    if (!m_hwnd || !IsWindow(m_hwnd)) return;
+    wchar_t buf[512] = {0};
+    GetWindowTextW(m_hEditUrl, buf, 512);
+    char u8[1024] = {0};
+    WideCharToMultiByte(CP_UTF8, 0, buf, -1, u8, 1024, nullptr, nullptr);
+
+    ChatConfig cfg = m_controller.GetConfig();
+    cfg.youtubeUrl = u8;
+    cfg.showBackground = (SendMessageW(m_chkDockBg, BM_GETCHECK, 0, 0) == BST_CHECKED);
+    cfg.messageBold = (SendMessageW(m_chkDockBold, BM_GETCHECK, 0, 0) == BST_CHECKED);
+    m_controller.UpdateConfig(cfg);
+}
+
+void DockPanel::SyncFromController() {
+    if (!m_hwnd || !IsWindow(m_hwnd)) return;
+    const ChatConfig& cfg = m_controller.GetConfig();
+
+    if (m_hEditUrl && IsWindow(m_hEditUrl) && GetFocus() != m_hEditUrl) {
+        wchar_t currentEdit[512] = {0};
+        GetWindowTextW(m_hEditUrl, currentEdit, 512);
+        std::wstring wUrl(cfg.youtubeUrl.begin(), cfg.youtubeUrl.end());
+        if (wUrl != currentEdit) {
+            SetWindowTextW(m_hEditUrl, wUrl.c_str());
+        }
+    }
+
+    if (m_chkDockBg && IsWindow(m_chkDockBg)) {
+        bool bgChecked = (SendMessageW(m_chkDockBg, BM_GETCHECK, 0, 0) == BST_CHECKED);
+        if (bgChecked != cfg.showBackground) {
+            SendMessageW(m_chkDockBg, BM_SETCHECK, cfg.showBackground ? BST_CHECKED : BST_UNCHECKED, 0);
+        }
+    }
+
+    if (m_chkDockBold && IsWindow(m_chkDockBold)) {
+        bool boldChecked = (SendMessageW(m_chkDockBold, BM_GETCHECK, 0, 0) == BST_CHECKED);
+        if (boldChecked != cfg.messageBold) {
+            SendMessageW(m_chkDockBold, BM_SETCHECK, cfg.messageBold ? BST_CHECKED : BST_UNCHECKED, 0);
+        }
     }
 }
 
@@ -248,18 +310,7 @@ LRESULT CALLBACK DockPanel::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         case WM_TIMER: {
             if (self && wParam == 1) {
                 self->UpdateMessageCount(self->m_controller.GetMessageCount());
-                if (self->m_chkDockBg && IsWindow(self->m_chkDockBg)) {
-                    bool bgChecked = (SendMessageW(self->m_chkDockBg, BM_GETCHECK, 0, 0) == BST_CHECKED);
-                    if (bgChecked != self->m_controller.GetConfig().showBackground) {
-                        SendMessageW(self->m_chkDockBg, BM_SETCHECK, self->m_controller.GetConfig().showBackground ? BST_CHECKED : BST_UNCHECKED, 0);
-                    }
-                }
-                if (self->m_chkDockBold && IsWindow(self->m_chkDockBold)) {
-                    bool boldChecked = (SendMessageW(self->m_chkDockBold, BM_GETCHECK, 0, 0) == BST_CHECKED);
-                    if (boldChecked != self->m_controller.GetConfig().messageBold) {
-                        SendMessageW(self->m_chkDockBold, BM_SETCHECK, self->m_controller.GetConfig().messageBold ? BST_CHECKED : BST_UNCHECKED, 0);
-                    }
-                }
+                self->SyncFromController();
             }
             return 0;
         }
@@ -275,11 +326,8 @@ LRESULT CALLBACK DockPanel::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
             int id = LOWORD(wParam);
 
             if (id == 2001) { // START
-                wchar_t buf[512] = {0};
-                GetWindowTextW(self->m_hEditUrl, buf, 512);
-                char u8[1024] = {0};
-                WideCharToMultiByte(CP_UTF8, 0, buf, -1, u8, 1024, nullptr, nullptr);
-                self->m_controller.StartChat(u8);
+                self->SyncToController();
+                self->m_controller.StartChat(self->m_controller.GetConfig().youtubeUrl);
             } else if (id == 2002) { // STOP
                 self->m_controller.StopChat();
             } else if (id == 2003) { // PREVIEW
@@ -287,6 +335,7 @@ LRESULT CALLBACK DockPanel::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 self->m_controller.SetPreviewMode(!isPrev);
                 if (self->m_btnPreview) InvalidateRect(self->m_btnPreview, nullptr, TRUE);
             } else if (id == 2004) { // DETAILED SETTINGS
+                self->SyncToController();
                 self->m_dialog.Show(nullptr);
             } else if (id == 2005) { // SHOW BG CHECKBOX
                 ChatConfig cfg = self->m_controller.GetConfig();
@@ -296,6 +345,15 @@ LRESULT CALLBACK DockPanel::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                 ChatConfig cfg = self->m_controller.GetConfig();
                 cfg.messageBold = (SendMessageW(self->m_chkDockBold, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 self->m_controller.UpdateConfig(cfg);
+            } else if (id == 2007) { // LOAD SETTING IN DOCK
+                ChatConfig cfg = self->m_controller.GetConfig();
+                if (cfg.loadStandardConfig()) {
+                    self->m_controller.UpdateConfig(cfg);
+                    self->SyncFromController();
+                    self->UpdateStatusText(ChatProviderStatus::Connected, "Setting di-load");
+                } else {
+                    self->UpdateStatusText(ChatProviderStatus::Error, "File setting belum ada");
+                }
             }
             return 0;
         }
