@@ -20,24 +20,24 @@ jobs:
 
       # PENTING (dari log CI asli, error RC2135): `--parallel` nge-build SEMUA
       # target sekaligus - termasuk installer - padahal installer.rc butuh
-      # ../yt-chat-overlay.dll + ../YouTubeChatOverlay.exe yang belum ada di root.
-      # Urutan wajib: build lib + exe DULU, copy ke root, BARU installer.
+      # ../build/yt-chat-overlay.dll + ../build/LalaLiveChatOverlay.exe yang
+      # belum ada. Urutan wajib: build DLL + exe DULU, copy ke build/, BARU installer.
       - name: Build plugin DLL + exe overlay
         run: |
           cmake --build build --config Release --target yt-chat-overlay --parallel
-          cmake --build build --config Release --target YouTubeChatOverlay --parallel
+          cmake --build build --config Release --target LalaLiveChatOverlay --parallel
 
-      # installer.rc baca ../yt-chat-overlay.dll + ../YouTubeChatOverlay.exe
+      # installer.rc baca ../build/yt-chat-overlay.dll + ../build/LalaLiveChatOverlay.exe
       - name: Siapkan file buat installer
         shell: pwsh
         run: |
           $dll = Get-ChildItem -Recurse -Path build -Filter yt-chat-overlay.dll | Select-Object -First 1
-          $exe = Get-ChildItem -Recurse -Path build -Filter YouTubeChatOverlay.exe | Select-Object -First 1
+          $exe = Get-ChildItem -Recurse -Path build -Filter LalaLiveChatOverlay.exe | Select-Object -First 1
           if (-not $dll) { Write-Error "yt-chat-overlay.dll nol ketemu"; exit 1 }
-          if (-not $exe) { Write-Error "YouTubeChatOverlay.exe nol ketemu"; exit 1 }
-          Copy-Item $dll.FullName "$env:GITHUB_WORKSPACE\yt-chat-overlay.dll" -Force
-          Copy-Item $exe.FullName "$env:GITHUB_WORKSPACE\YouTubeChatOverlay.exe" -Force
-          Get-ChildItem "$env:GITHUB_WORKSPACE\yt-chat-overlay.dll","$env:GITHUB_WORKSPACE\YouTubeChatOverlay.exe" |
+          if (-not $exe) { Write-Error "LalaLiveChatOverlay.exe nol ketemu"; exit 1 }
+          Copy-Item $dll.FullName "$env:GITHUB_WORKSPACE\build\yt-chat-overlay.dll" -Force
+          Copy-Item $exe.FullName "$env:GITHUB_WORKSPACE\build\LalaLiveChatOverlay.exe" -Force
+          Get-ChildItem "$env:GITHUB_WORKSPACE\build\yt-chat-overlay.dll","$env:GITHUB_WORKSPACE\build\LalaLiveChatOverlay.exe" |
             Select-Object Name, Length
 
       - name: GATE - pastikan nol ada CRT debug di DLL
@@ -69,6 +69,6 @@ jobs:
           name: lala-chat-overlay-release
           path: |
             build/**/yt-chat-overlay.dll
-            build/**/YouTubeChatOverlay.exe
+            build/**/LalaLiveChatOverlay.exe
             build/**/LalaLiveChatOverlaySetup.exe
           if-no-files-found: warn
